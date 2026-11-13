@@ -1,0 +1,62 @@
+/* ---------- إدارة الاختبارات ورصد الدرجات: النسق الزجاجي المعتمد في المنصة ---------- */
+.gbar{display:inline-block;width:92px;height:9px;border-radius:99px;background:color-mix(in srgb,var(--ink3) 18%,transparent);vertical-align:middle;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,20,50,.12)}
+.gbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--pri),var(--teal));transition:width .25s}
+.gbar.ok i{background:linear-gradient(90deg,var(--ok),color-mix(in srgb,var(--ok) 60%,var(--teal)))}.gbar.bad i{background:var(--bad)}
+.gpc{font-variant-numeric:tabular-nums;font-size:13px;margin-inline-start:7px}
+.gred{color:var(--bad)}
+.gcrn{font-weight:800;font-variant-numeric:tabular-nums;font-size:14.5px}
+.gmain td{padding-block:8px}
+.gnote{border:1px solid var(--line);border-inline-start:4px solid var(--ink3);border-radius:12px;padding:8px 12px;margin-block:8px;font-size:13.5px;background:var(--gl-card,var(--surface));-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.gnote.ok{border-inline-start-color:var(--ok);background:color-mix(in srgb,var(--ok) 9%,var(--gl-card,var(--surface)))}
+.gnote.info{border-inline-start-color:var(--info);background:color-mix(in srgb,var(--info) 8%,var(--gl-card,var(--surface)))}
+.gnote.warn{border-inline-start-color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,var(--gl-card,var(--surface)))}
+.gnote.bad{border-inline-start-color:var(--bad);background:color-mix(in srgb,var(--bad) 9%,var(--gl-card,var(--surface)))}
+.gnote ul,.gul{margin:4px 0 0;padding-inline-start:18px}.gnote .btn{margin-inline-start:6px}
+label.gnote{display:flex;gap:8px;align-items:flex-start}
+/* المراحل الثماني */
+.gstages{list-style:none;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;padding:0;margin:10px 0}
+.gstages li{display:grid;gap:1px;align-content:start;padding:8px 9px;border-radius:14px;border:1px solid var(--gl-edge,var(--line));background:var(--gl-card,var(--surface));-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);box-shadow:var(--gl-hi,none);min-width:0;position:relative}
+.gstages li b{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;background:color-mix(in srgb,var(--ink3) 22%,transparent);color:var(--ink2)}
+.gstages li span{font-weight:800;font-size:12.5px;line-height:1.35;color:var(--ink)}
+.gstages li small{font-size:11.5px;color:var(--ink3);line-height:1.35;overflow-wrap:anywhere}
+.gstages li.done{border-color:color-mix(in srgb,var(--ok) 40%,transparent)}.gstages li.done b{background:var(--ok);color:#fff}
+.gstages li.cur{border-color:var(--pri);box-shadow:0 6px 18px color-mix(in srgb,var(--pri) 22%,transparent),var(--gl-hi,none)}.gstages li.cur b{background:var(--pri);color:#fff}
+.gstages li.bad{border-color:color-mix(in srgb,var(--bad) 55%,transparent)}.gstages li.bad b{background:var(--bad);color:#fff}
+.gstages li.wait{opacity:.72}
+.gleg{margin-block:4px 2px}.gdot{display:inline-block;width:11px;height:11px;border-radius:50%;background:color-mix(in srgb,var(--ink3) 30%,transparent)}.gdot.done{background:var(--ok)}.gdot.cur{background:var(--pri)}.gdot.bad{background:var(--bad)}
+/* جدول الدرجات */
+.gtools{margin:10px 0 8px}.gtools input[type=search]{flex:1;min-width:190px;max-width:340px}.gtools label{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink2);font-weight:700}
+.gtab{font-size:13.5px}.gtab th{text-align:center;vertical-align:middle}.gtab th small{display:block;font-weight:600;font-size:11px;color:var(--ink3)}
+.gtab th.gph{background:color-mix(in srgb,var(--pri) 12%,transparent);color:var(--ink)}
+.gtab td.gnm{min-width:210px}.gtab td{padding-block:3px}
+.gin{width:66px;text-align:center;font:inherit;font-variant-numeric:tabular-nums;font-weight:700;padding:5px 4px;border:1px solid color-mix(in srgb,var(--ink3) 50%,transparent);border-radius:10px;background:var(--gl-card2,var(--surface));color:var(--ink);box-shadow:inset 0 1px 2px rgba(0,20,50,.08)}
+.gin:hover{border-color:var(--blue)}.gin:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--pri)}
+.gin.g-bad,.gbadc{border-color:var(--bad)!important;background:color-mix(in srgb,var(--bad) 12%,transparent);color:var(--bad)}
+.gsumc{font-weight:700;color:var(--ink2);background:color-mix(in srgb,var(--ink3) 7%,transparent);font-variant-numeric:tabular-nums}
+.gtot{font-weight:800;font-size:14.5px;font-variant-numeric:tabular-nums}
+.gnarow td{color:var(--ink3);background:color-mix(in srgb,var(--ink3) 6%,transparent)}.gnarow b{font-weight:600}
+.gstale{color:var(--bad);text-decoration:line-through}
+.gmsg{border-radius:12px;padding:8px 12px;margin-bottom:8px;font-weight:700;font-size:13.5px;color:var(--bad);background:color-mix(in srgb,var(--bad) 11%,var(--gl-card,var(--surface)));border:1px solid color-mix(in srgb,var(--bad) 40%,transparent)}
+.grev{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin-block:8px;font-size:13px;color:var(--ink2)}.grev b{color:var(--ink);font-variant-numeric:tabular-nums}.grev b.gred{color:var(--bad)}
+.gexam .gstages{margin-bottom:4px}
+/* الإشعارات */
+.gnotices{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.gnotices li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 11px;border-radius:12px;border:1px solid var(--line);border-inline-start:4px solid var(--ink3);font-size:13.5px;background:var(--gl-card2,var(--surface))}
+.gnotices li.bad{border-inline-start-color:var(--bad)}.gnotices li.warn{border-inline-start-color:var(--warn)}.gnotices li.info{border-inline-start-color:var(--info)}.gnotices li.ok{border-inline-start-color:var(--ok)}
+/* المزامنة */
+.gop,.gres{border:1px solid var(--gl-edge,var(--line));border-radius:14px;padding:11px 13px;margin-top:10px;background:var(--gl-card2,var(--surface))}
+.gprog{height:8px;border-radius:99px;background:color-mix(in srgb,var(--ink3) 18%,transparent);overflow:hidden;margin:8px 0}
+.gprog i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--pri),var(--teal));background-size:200% 100%;animation:gflow 1.6s linear infinite}
+@keyframes gflow{from{background-position:0 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.gprog i{animation:none}.gbar i{transition:none}}
+.gsteps{list-style:none;counter-reset:gs;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;padding:0;margin:8px 0}
+.gsteps li{counter-increment:gs;display:grid;gap:5px;align-content:start;border:1px solid var(--line);border-radius:12px;padding:9px 11px;font-size:13px;color:var(--ink2)}
+.gsteps li::before{content:"الخطوة " counter(gs);font-size:11.5px;font-weight:800;color:var(--ink3)}
+.gsteps li b{color:var(--ink)}.gsteps li.done{border-color:color-mix(in srgb,var(--ok) 45%,transparent)}.gsteps li.done::before{color:var(--ok)}.gsteps li.cur{border-color:var(--pri)}.gsteps li.cur::before{color:var(--pri)}
+.gsteps textarea{width:100%;font:11.5px ui-monospace,Menlo,Consolas,monospace}.gsteps .btn{justify-self:start}
+.tiles.gk5{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:900px){.tiles.gk5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.gcomp{display:grid;gap:8px}.gcomp>div{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px}
+tr.gds td{border-top:2px solid var(--gl-line,var(--line))}
+@media (max-width:1100px){.gstages{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:620px){.gstages{grid-template-columns:repeat(2,minmax(0,1fr))}.gin{width:56px}.gtab td.gnm{min-width:150px}.gnotices li{flex-direction:column;align-items:stretch}}

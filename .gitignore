@@ -1,0 +1,5 @@
+node_modules/
+build/
+tests/out/
+tests/fixtures/grades.xlsx
+*.local.*

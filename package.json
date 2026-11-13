@@ -1,0 +1,15 @@
+{
+  "name": "haader-platform",
+  "version": "22.0.0",
+  "private": true,
+  "description": "منصة حاضر — تحضير المتدربين والإرشاد والسلوك ورصد الدرجات ومزامنتها مع رايات",
+  "scripts": {
+    "build": "python3 tools/build.py",
+    "test": "node tests/run.js",
+    "smoke": "node tests/smoke.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0",
+    "xlsx": "^0.18.5"
+  }
+}

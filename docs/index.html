@@ -689,7 +689,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   /* ---------- طبقة الوصول إلى القاعدة ---------- */
   async function api(path, opts = {}) {
-    const r = await fetch(REST + path, Object.assign({ headers: H(opts.headers) }, opts));
+    const o = Object.assign({}, opts); o.headers = H(opts.headers);
+    const r = await fetch(REST + path, o);
     if (r.status === 401 && S.refresh) { if (await refresh()) return api(path, opts); }
     if (!r.ok) { const t = await r.text(); const e = new Error(t.slice(0, 300)); e.status = r.status; e.code = (() => { try { return JSON.parse(t).code; } catch (x) { return ''; } })(); throw e; }
     return r.status === 204 ? null : r.json();

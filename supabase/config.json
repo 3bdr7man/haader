@@ -1,0 +1,8 @@
+{
+  "project_ref": "urtdulwbpabslicxtsoa",
+  "url": "https://urtdulwbpabslicxtsoa.supabase.co",
+  "publishable_key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi",
+  "region": "eu-central-1",
+  "plan": "free",
+  "note": "المفتاح أعلاه عام بطبيعته ومصمَّم للعمل داخل المتصفح. الحماية في سياسات RLS، وقد تحقق أن كل الجداول ترد 401 لغير المسجَّل. المفتاح السري (sb_secret_...) لا يوضع هنا ولا في أي ملف."
+}

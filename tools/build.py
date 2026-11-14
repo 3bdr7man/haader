@@ -6,7 +6,7 @@ s = (R/'app/index.v20.html').read_text(encoding='utf8')
 src = lambda n: (R/'src'/n).read_text(encoding='utf8')
 
 # 1) CSS: يُلحق بآخر ورقة الأنماط
-css = src('modal.css') + '\n' + src('grades.css')
+css = src('modal.css') + '\n' + src('h2.css') + '\n' + src('h3.css') + '\n' + src('grades.css')
 mark = '</style>\n<div id="gate"'
 assert s.count(mark) == 1
 s = s.replace(mark, '\n' + css + mark)
@@ -32,7 +32,7 @@ b = b + (';' if not b.endswith(';') else '') + gb
 s = s[:m.start(2)] + b + s[m.end(2):]
 
 # 3) الوحدة: قبل boot() في السكربت الرئيسي
-mod = '\n'.join(src(n) for n in ['g1-engine.js', 'g2-data.js', 'g3a-views.js', 'g3b-views.js', 'g3c-views.js', 'g4-actions.js', 'g5-accounts.js', 'g0-ui.js'])
+mod = '\n'.join(src(n) for n in ['g1-engine.js', 'g2-data.js', 'g3a-views.js', 'g3b-views.js', 'g3c-views.js', 'g4-actions.js', 'g5-accounts.js', 'h1-core.js', 'g0-ui.js', 'h2-ui.js', 'h3-polish.js'])
 assert '</script' not in mod
 i = s.rindex('\nboot();\n')
 s = s[:i] + '\n\n' + mod + '\n' + s[i:]

@@ -557,6 +557,42 @@ body.mopen{overflow:hidden}
   #modal .row .btn{flex:1 1 auto;justify-content:center}
 }
 
+/* مسار التنقل */
+.hcrumb{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;font-size:12.5px;color:var(--ink3)}
+.hcrumb a{color:var(--ink2);text-decoration:none;border-bottom:1px dashed var(--line)}
+.hcrumb a:hover{color:var(--pri)}
+.hcrumb b{color:var(--ink);font-weight:700}
+.hcrumb i{font-style:normal;opacity:.55}
+.hcrumb .btn.s{margin-inline-end:4px}
+/* بطاقات لوحة القيادة القابلة للنقر */
+.hcmd .tiles{margin-top:10px}
+.tile.act{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
+.tile.act:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.10);border-color:var(--pri)}
+.tile.act:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.tile.act small{display:block;margin-top:2px;color:var(--ink3);font-size:11.5px}
+@media (max-width:640px){.hcrumb{font-size:12px}}
+
+/* أيقونات القائمة */
+#nav a{display:flex;align-items:center;gap:8px}
+#nav .nico{width:17px;height:17px;flex:0 0 17px;opacity:.75}
+#nav a[aria-current=page] .nico,#nav a:hover .nico{opacity:1}
+#nav a[aria-current=page]{font-weight:700}
+/* فرز الأعمدة */
+th.hsort{cursor:pointer;user-select:none;position:relative;padding-inline-end:16px}
+th.hsort:hover{color:var(--pri)}
+th.hsort:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
+th.hsort::after{content:'⇅';position:absolute;inset-inline-end:4px;opacity:.35;font-size:11px}
+th.hsort.up::after{content:'▲';opacity:.9;font-size:9px}
+th.hsort.dn::after{content:'▼';opacity:.9;font-size:9px}
+table.thsticky thead th{position:sticky;top:0;z-index:2;background:var(--surface2)}
+/* الحالة الفارغة داخل الجداول */
+tr.hempty td{padding:18px 10px!important;text-align:center;background:transparent}
+.hemptyb b{display:block;color:var(--ink2);font-size:13.5px;margin-bottom:2px}
+.hemptyb span{display:block;color:var(--ink3);font-size:12px}
+/* تخطٍّ إلى المحتوى */
+#hskip{position:fixed;inset-inline-start:-9999px;top:8px;z-index:9999;background:var(--surface);color:var(--ink);border:1px solid var(--pri);border-radius:8px;padding:8px 12px;font:inherit;text-decoration:none}
+#hskip:focus{inset-inline-start:8px}
+
 /* ---------- إدارة الاختبارات ورصد الدرجات: النسق الزجاجي المعتمد في المنصة ---------- */
 .gbar{display:inline-block;width:92px;height:9px;border-radius:99px;background:color-mix(in srgb,var(--ink3) 18%,transparent);vertical-align:middle;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,20,50,.12)}
 .gbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--pri),var(--teal));transition:width .25s}
@@ -4607,7 +4643,7 @@ VIEWS.gsync = () => {
 const gLogVisible = (r) => isAdmin() || isHead() || (r.crn && gOwner(r.crn) === A.me.id) || r.by === A.me.id;
 const gNameOf = (crn, id) => { const s = A.raw.gsec[crn], r = s && s.rows.find((x) => x.id === id); return r ? r.name : ''; };
 VIEWS.glog = () => {
-  if (isViewer()) return `${gHead('سجل عمليات الرصد والمزامنة', 'السجل يتضمن درجات المتدربين، ويظهر للمدرب في شعبه ولرئيس القسم ومسؤول المنصة.')}<section class="panel empty"><p>حساب الاطلاع لا يعرض هذا السجل.</p></section>`;
+  if (isViewer()) return `${gHead('سجل العمليات والتدقيق', 'سجل محمي على مستوى قاعدة البيانات يضم الدرجات وحسابات المتدربين وتعديلات التحضير وإجراءات الإرشاد: وثيقة لكل مستخدم لا يكتب فيها غيره، وأرشفة عند الامتلاء لا حذف.')}<section class="panel empty"><p>حساب الاطلاع لا يعرض هذا السجل.</p></section>`;
   const tab = GX.tab.log || 'audit', F = Object.assign({ crn: '', act: '' }, GX.logF);
   const rows = gLogRows().filter(gLogVisible).filter((r) => (!F.crn || r.crn === F.crn) && (!F.act || r.act === F.act));
   const ops = Object.values(A.raw.gops).filter((o) => o && gList(o.crn)).sort((a, b) => (a.at < b.at ? 1 : -1));
@@ -5157,6 +5193,200 @@ Object.assign(GACT, { 'acc-new': 'إنشاء حساب متدرب', 'acc-pw': 'إ
 VIEW_CHG.add('t-f');
 
 /* ====================================================================
+   الموجة الأولى من خطة التطوير: سد الثغرات
+   1) سجل تدقيق موحد ومحمي: تعديلات التحضير والإرشاد تذهب أيضاً إلى
+      السجل المحمي (وثيقة لكل مستخدم، أرشفة لا حذف، تصفية وتصدير).
+   2) مصفوفة صلاحيات معلنة في صفحة واحدة.
+   3) مركز إشعارات موحد يجمع ما تفرّق في الأقسام.
+   4) تصدير شامل (نسخة احتياطية) لكل بيانات المنصة.
+   5) مركز تطوير حاضر: خريطة الهيكل وحالة كل تحسين.
+   لا يحذف شيئاً ولا يغيّر منطق وظيفة قائمة.
+   ==================================================================== */
+Object.assign(GACT, { att: 'تعديل تحضير', attdel: 'مسح تحضير', bosla: 'إجراء إرشادي', backup: 'تصدير نسخة احتياطية' });
+/* سجل التحضير والإرشاد يُكتب في موضعه القديم (meta/audit) ويُضاف إلى السجل المحمي */
+{
+  const prev = audit;
+  audit = function (rows) {
+    prev(rows);
+    try {
+      const out = (rows || []).map((r) => {
+        const bosla = r[3] === 'الإرشاد والسلوك' || r[7] === 'بوصلة';
+        return bosla ? ['bosla', '', r[2] === '—' ? '' : r[2], '', r[5] || '', r[6] || '', 'بوصلة']
+          : [r[6] ? 'att' : 'attdel', r[1] || '', r[2] || '', r[4] || '', r[5] || '', r[6] || '', r[7] || 'يدوي'];
+      });
+      if (out.length) gLog(out.slice(0, 200));
+    } catch (e) { /* السجل القديم محفوظ على أي حال */ }
+  };
+}
+/* ---------- 2) مصفوفة الصلاحيات المعلنة ---------- */
+const PROLE = [['admin', 'مسؤول المنصة'], ['trainer', 'مدرب المقرر'], ['head', 'رئيس القسم'], ['viewer', 'حساب الاطلاع'], ['trainee', 'المتدرب']];
+const PCAP = [
+  ['التحضير والمتابعة', [
+    ['عرض التحضير', 'كل الشعب', 'شعبه', 'كل الشعب', 'كل الشعب', '—'],
+    ['تعديل التحضير', 'الشعب غير المسندة', 'شعبه وحده', '—', '—', '—'],
+    ['التحضير عبر QR', 'الشعب غير المسندة', 'شعبه', '—', '—', '—'],
+    ['مزامنة التحضير مع رايات', 'بصلاحية المزامنة', 'بصلاحية المزامنة', '—', '—', '—'],
+  ]],
+  ['الدرجات', [
+    ['عرض الدرجات', 'كل الشعب', 'شعبه', 'كل الشعب', 'الحالات بلا درجات', '—'],
+    ['إدخال الدرجات', 'الشعب غير المسندة', 'شعبه وحده', '—', '—', '—'],
+    ['الاعتماد والتجميد وفك التجميد', 'الشعب غير المسندة', 'شعبه وحده', '—', '—', '—'],
+    ['جدولة الرفع والرفع إلى رايات', 'الشعب غير المسندة', 'شعبه وحده', '—', '—', '—'],
+    ['استيراد توزيع الدرجات', 'نعم', '—', '—', '—', '—'],
+  ]],
+  ['حسابات المتدربين', [
+    ['إنشاء حساب وإعادة إصدار كلمة المرور', 'كل المتدربين', 'متدربو شعبه', '—', '—', '—'],
+    ['تعطيل حساب وإعادة تفعيله', 'نعم', '—', '—', '—', '—'],
+    ['تغيير كلمة المرور الخاصة', '—', '—', '—', '—', 'نعم (بعد الاستضافة)'],
+    ['تغيير الرقم التدريبي', '—', '—', '—', '—', '—'],
+  ]],
+  ['الإرشاد والسلوك', [
+    ['سجل المخالفات والحالات', 'كامل', 'متدربوه', 'اطلاع', 'اطلاع', '—'],
+    ['إجراءات الإرشاد ومسار العمل', 'كامل', 'متدربوه', '—', '—', '—'],
+  ]],
+  ['التقارير والسجلات', [
+    ['التقارير والطباعة', 'كامل', 'شعبه', 'كامل', 'بصلاحية التصدير', '—'],
+    ['التصدير إلى Excel', 'نعم', 'بصلاحية التصدير', 'بصلاحية التصدير', 'بصلاحية التصدير', '—'],
+    ['سجل التدقيق المحمي', 'كل العمليات', 'عملياته وشعبه', 'كل العمليات', '—', '—'],
+    ['النسخة الاحتياطية الشاملة', 'نعم', '—', '—', '—', '—'],
+  ]],
+  ['إدارة النظام', [
+    ['المدربون والصلاحيات والشعب والقسم', 'نعم', '—', '—', '—', '—'],
+    ['الإعدادات وسمات الألوان', 'نعم', '—', '—', '—', '—'],
+  ]],
+];
+const pRoleNow = () => (!A.me ? '' : isAdmin() ? 'admin' : isHead() ? 'head' : isViewer() ? 'viewer' : 'trainer');
+const pCell = (v) => (v === '—' ? '<span class="chip">لا</span>' : v === 'نعم' || v === 'كامل' ? `<span class="chip ok">${esc(v)}</span>` : `<span class="chip info">${esc(v)}</span>`);
+VIEWS.perms = () => {
+  const me = pRoleNow();
+  return `${gHead('مصفوفة الصلاحيات', 'من يستطيع ماذا في منصة حاضر، مكتوبةً في مكان واحد ومطابقةً لما تفحصه الشيفرة فعلاً.', dl && can('export') ? '<button class="btn" data-act="p-print">طباعة المصفوفة</button>' : '')}
+  <div class="gnote info">دورك الحالي: <b>${esc((PROLE.find((r) => r[0] === me) || ['', 'غير محدد'])[1])}</b>. العمود الخاص بدورك مظلّل. والشعبة لمدربها: لا يعدّل أحد شعبة غيره، ومسؤول المنصة يتولى الشعب غير المسندة فقط.</div>
+  ${PCAP.map(([grp, rows]) => `<section class="panel"><h2>${esc(grp)}</h2><div class="tw"><table><thead><tr><th>الإجراء</th>${PROLE.map((r) => `<th class="n"${r[0] === me ? ' style="background:var(--infobg)"' : ''}>${esc(r[1])}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r[0])}</td>${r.slice(1).map((v, i) => `<td class="n"${PROLE[i][0] === me ? ' style="background:var(--infobg)"' : ''}>${pCell(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`).join('')}
+  <section class="panel"><h2>ما لا تستطيعه المنصة اليوم</h2><div class="gnote warn">المتدرب لا يستطيع الدخول على الرابط الحالي، ولا يرى رئيس القسم ولا مدرب آخر البيانات على رابط واحد: المنصة تعمل داخل Claude وقاعدتها تتيح الكتابة لمالكها وحده. الحسابات والصلاحيات أعلاه مُهيّأة وتعمل فور نقل المنصة إلى استضافة مفتوحة.</div></section>`;
+};
+ACT['p-print'] = () => {
+  const body = `${gDocTop('مصفوفة الصلاحيات', null)}${PCAP.map(([grp, rows]) => `<h3>${esc(grp)}</h3><table><thead><tr><th>الإجراء</th>${PROLE.map((r) => `<th>${esc(r[1])}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r[0])}</td>${r.slice(1).map((v) => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`).join('')}<p>طُبعت ${gDT(new Date().toISOString())}</p>`;
+  printDoc('مصفوفة الصلاحيات', body);
+};
+/* ---------- 3) مركز الإشعارات الموحد ---------- */
+const hToday = () => { const s = today(), c = ((A.m && A.m.cal) || []).find((x) => x.serial === s); return c ? c.hijri : ''; };
+function hInbox() {
+  const out = [], m = A.m;
+  /* أ) شعب اليوم التي لم تُحضَّر */
+  const d = hToday();
+  if (d && m) m.sections.forEach((s) => {
+    if (!mayEdit(s.crn) || !s.dates.includes(d)) return;
+    const n = s.rows.filter((r) => H.code(m, s.crn, r.id, d)).length;
+    if (!n) out.push({ p: 1, kind: 'تحضير', text: `لم تُحضَّر الشعبة ${s.crn} (${s.course}) اليوم`, view: 'roll', crn: s.crn });
+    else if (n < s.rows.length) out.push({ p: 2, kind: 'تحضير', text: `تحضير الشعبة ${s.crn} غير مكتمل: ${n} من ${s.rows.length}`, view: 'roll', crn: s.crn });
+  });
+  /* ب) المقتربون من الإنذار والحرمان */
+  try {
+    const a = alertRows(m), dep = a.near.filter((x) => x.stage === 'dep'), warn = a.near.filter((x) => x.stage === 'warn');
+    if (dep.length) out.push({ p: 1, kind: 'إنذار', text: `${dep.length} متدرباً يفصلهم غياب واحد عن الحرمان`, view: 'alerts' });
+    if (warn.length) out.push({ p: 2, kind: 'إنذار', text: `${warn.length} متدرباً يفصلهم غياب واحد عن الإنذار`, view: 'alerts' });
+    if (a.reached.length) out.push({ p: 2, kind: 'إنذار', text: `${a.reached.length} متدرباً بلغ حد الإنذار أو الحرمان`, view: 'alerts' });
+  } catch (e) { /* لا يمنع بقية الإشعارات */ }
+  /* ج) الإرشاد: مخالفات وحالات مفتوحة */
+  try {
+    const vi = Object.values(A.raw.bviol || {}).filter((v) => v && v.status && !/مغلق|ملغ/.test(v.status)).length;
+    const cs = Object.values(A.raw.bcase || {}).filter((c) => c && c.status && !/مغلق/.test(c.status)).length;
+    if (vi) out.push({ p: 2, kind: 'إرشاد', text: `${vi} مخالفة قيد المتابعة`, view: 'bviol' });
+    if (cs) out.push({ p: 2, kind: 'إرشاد', text: `${cs} حالة إرشادية مفتوحة`, view: 'bcases' });
+  } catch (e) { /* */ }
+  /* د) الدرجات: إشعارات الجدولة والرفع */
+  try { gNotices().forEach((n) => out.push({ p: n.tone === 'bad' ? 1 : n.todo ? 2 : 3, kind: 'درجات', text: n.text, view: n.crn ? 'gsched' : 'gdash', crn: n.crn })); } catch (e) { /* */ }
+  /* هـ) حسابات المتدربين */
+  try {
+    const list = tRoster().filter((t) => tMine(t));
+    const none = list.filter((t) => !tAcc(t.id)).length, nd = list.filter((t) => { const a = tAcc(t.id); return a && !(a.deliv && a.deliv.at); }).length;
+    if (none) out.push({ p: 3, kind: 'حسابات', text: `${none} متدرباً بلا حساب دخول`, view: 'taccs' });
+    if (nd) out.push({ p: 3, kind: 'حسابات', text: `${nd} حساباً لم تُسلَّم كلمة مروره`, view: 'taccs' });
+  } catch (e) { /* */ }
+  return out.sort((a, b) => a.p - b.p);
+}
+const HP = { 1: ['عاجل', 'bad'], 2: ['مهم', 'warn'], 3: ['للعلم', 'info'] };
+VIEWS.inbox = () => {
+  const rows = hInbox(), n1 = rows.filter((r) => r.p === 1).length;
+  return `${gHead('مركز الإشعارات', 'كل ما يحتاج تدخلك اليوم، من التحضير والإنذار والإرشاد والدرجات والحسابات، في مكان واحد.')}
+  <div class="tiles kpi"><div class="tile ${n1 ? 'bad' : 'ok'}"><b>${n1}</b><span>عاجل</span></div><div class="tile warn"><b>${rows.filter((r) => r.p === 2).length}</b><span>مهم</span></div><div class="tile"><b>${rows.filter((r) => r.p === 3).length}</b><span>للعلم</span></div><div class="tile"><b>${rows.length}</b><span>الإجمالي</span></div></div>
+  ${rows.length ? `<section class="panel"><div class="tw"><table><thead><tr><th class="n">الأهمية</th><th class="n">القسم</th><th>الإشعار</th><th class="n">الإجراء</th></tr></thead><tbody>${rows.map((r) => `<tr><td class="n"><span class="chip ${HP[r.p][1]}">${HP[r.p][0]}</span></td><td class="n">${esc(r.kind)}</td><td>${esc(r.text)}</td><td class="n"><button class="btn s" data-act="h-go" data-v="${r.view}" data-crn="${r.crn || ''}">افتح</button></td></tr>`).join('')}</tbody></table></div></section>`
+    : '<section class="panel empty"><h2>لا يوجد ما يحتاج تدخلاً الآن</h2><div class="sub">التحضير مكتمل، ولا إنذارات قريبة، ولا عمليات رصد معلّقة.</div></section>'}`;
+};
+ACT['h-go'] = (e) => { const v = e.dataset.v, crn = e.dataset.crn; if (crn) { A.crn = crn; A.homeCrn = crn; if (A.raw.gsec[crn]) A.gCrn = crn; } go(v); };
+VIEW_ACTS.add('h-go');
+NAV_BADGE.inbox = () => { try { return hInbox().filter((r) => r.p === 1).length; } catch (e) { return 0; } };
+/* ---------- 4) النسخة الاحتياطية الشاملة ---------- */
+const HCOLS = ['accounts', 'sections', 'marks', 'notes', 'meta', 'qrs', 'warnlog', 'bosla', 'bviol', 'bcase', 'bforms', 'gcfg', 'gsec', 'gmarks', 'gsnap', 'gops', 'glog', 'glogs', 'tacc'];
+ACT['h-backup'] = async () => {
+  if (!isAdmin()) { toast('التصدير الشامل لمسؤول المنصة.'); return; }
+  const data = { app: 'haader', kind: 'backup', at: new Date().toISOString(), by: A.me.name, org: ORG, college: COLLEGE, dept: orgInfo().dept, cols: {} };
+  HCOLS.forEach((c) => { data.cols[c] = clone(A.raw[c] || {}); });
+  const n = HCOLS.reduce((a, c) => a + Object.keys(data.cols[c] || {}).length, 0);
+  const txt = JSON.stringify(data);
+  await save(`نسخة احتياطية - منصة حاضر - ${todayISO()}.json`, new Blob([txt], { type: 'application/json' }));
+  gLog([['backup', '', '', '', '', String(n), `${HCOLS.length} مجموعة، ${(txt.length / 1024).toFixed(0)} كيلوبايت`]]);
+  toast(`صُدِّرت نسخة احتياطية: ${n} وثيقة.`);
+};
+/* ---------- 5) مركز تطوير حاضر ---------- */
+const HROAD = [
+  ['سد الثغرات', [
+    ['سجل تدقيق موحد ومحمي للتحضير والإرشاد', 'done', 'تعديلات التحضير والإرشاد تُكتب أيضاً في السجل المحمي: وثيقة لكل مستخدم لا يكتب فيها غيره، أرشفة عند الامتلاء لا حذف، وتصفية وتصدير.'],
+    ['مصفوفة صلاحيات معلنة', 'done', 'صفحة واحدة تعرض من يستطيع ماذا، مطابقة لما تفحصه الشيفرة.'],
+    ['مركز إشعارات موحد', 'done', 'يجمع تحضير اليوم الناقص، والمقتربين من الإنذار والحرمان، والمخالفات والحالات المفتوحة، وإشعارات رفع الدرجات، وحسابات المتدربين غير المسلَّمة.'],
+    ['نسخة احتياطية شاملة', 'done', 'تصدير كل مجموعات البيانات في ملف واحد، ويُسجَّل التصدير.'],
+    ['خريطة الهيكل وحالة التطوير', 'done', 'هذه الصفحة.'],
+  ]],
+  ['إعادة التنظيم', [
+    ['لوحة قيادة واحدة ببطاقات قابلة للنقر', 'done', 'عشر بطاقات في أعلى الرئيسية: الإشعارات العاجلة، المتدربون، حضور اليوم، المقتربون من الإنذار، من بلغ الحد، المخالفات، الحالات، رصد الدرجات، الجاهز للرفع، الحسابات غير المسلَّمة. كل بطاقة تفتح موضعها.'],
+    ['إعادة تجميع القائمة: مدخل واحد لكل وظيفة', 'done', 'أعلى القائمة صار: الرئيسية، مركز الإشعارات، البحث الموحد. والتقارير يتصدرها مركز التقارير. ولم تُحذف ولا نُقلت أي واجهة من قسمها.'],
+    ['بحث موحد: متدرب، شعبة، واجهة', 'done', 'بحث واحد بالاسم أو الرقم التدريبي أو رقم الشعبة أو اسم الواجهة، ونتائجه تفتح التحضير أو الإرشاد أو الحساب أو الدرجات مباشرة.'],
+    ['مسار تنقل وزر رجوع للصفحات العميقة', 'done', 'كل واجهة تعرض: الرئيسية ← القسم ← الواجهة، مع زر رجوع. والواجهات التي لا تظهر في القائمة صار لها موضع معلوم.'],
+    ['مركز تقارير واحد', 'done', 'ثماني وجهات تقارير وسجلات من مدخل واحد: التحضير، الإنذار، الاستئذان، الدرجات، الإرشاد، التحليلات، وسجل العمليات والتدقيق.'],
+  ]],
+  ['الصقل البصري', [
+    ['فرز الأعمدة وتجميد الرؤوس في جداول الواجهات', 'done', 'كل جدول عرض من أربعة صفوف يُفرز بالنقر على رأس العمود، تصاعدياً وتنازلياً، ورقمياً للأعمدة الرقمية. وجداول الإدخال مستثناة حتى لا يتحرك الصف أثناء التحضير.'],
+    ['مجموعة أيقونات موحدة وحالات فارغة لكل واجهة', 'done', 'أيقونة خطية موحدة لكل عنصر في القائمة، ورسالة واضحة داخل أي جدول لا بيانات فيه بدل الفراغ.'],
+    ['توحيد نقاط الانكسار وتقليص الأنماط المضمنة', 'next', 'الأنماط الجديدة كلها بمتغيّرات التصميم وبثلاث نقاط انكسار، أما 241 نمطاً مضمناً و120 لوناً في الواجهات القديمة فتُنقل تدريجياً مع كل تعديل على واجهتها — لا دفعة واحدة، لأن استبدالها جملةً يخاطر بالتخطيط بلا مقابل ظاهر.'],
+    ['إمكانية الوصول: لوحة المفاتيح وقارئ الشاشة', 'done', 'رابط «تخطَّ إلى المحتوى»، وإعلان الواجهة الحالية في القائمة، وscope لكل رأس عمود، وإعلان ترتيب الفرز، وتفعيل بطاقات لوحة القيادة بلوحة المفاتيح.'],
+    ['أنواع رسوم بيانية إضافية', 'plan', 'المنصة اليوم فيها نوع واحد: أشرطة أفقية.'],
+  ]],
+  ['ما ينتظر قراراً', [
+    ['اللون الرئيسي للهوية', 'ask', 'هوية التدريب التقني أزرق #003366 و#0066CC وخط Cairo، وطلبت الأخضر رئيسياً. توصيتي: الأزرق للهوية والأخضر للإنجاز والتميّز.'],
+    ['صفحة متدرب واحدة تجمع التحضير والسلوك والدرجات والحساب', 'plan', ''],
+    ['توسيع إدارة المدربين، والأسئلة الشائعة وطلب الدعم', 'plan', ''],
+    ['القاعات والمعامل والجداول التدريبية', 'hold', 'لا مصدر بيانات لها عند المدرب، وإدخالها يدوياً عبء بلا مقابل.'],
+    ['الاستضافة الخارجية: دخول المتدربين والاستخدام المشترك', 'hold', 'قرارك الحالي: البقاء داخل Claude هذا الفصل. الحسابات والمصنفات جاهزة وتعمل فور النقل.'],
+  ]],
+];
+const HST = { done: ['منفَّذ', 'ok'], next: ['قيد التنفيذ', 'info'], plan: ['مخطَّط', ''], ask: ['ينتظر قرارك', 'warn'], hold: ['مؤجَّل بقرار', 'bad'] };
+const hCount = (k) => HROAD.reduce((a, [, items]) => a + items.filter((x) => x[1] === k).length, 0);
+VIEWS.devcenter = () => {
+  const groups = NAV.map(([g, items]) => ({ label: g || 'الرئيسية', n: items.length }));
+  const all = HROAD.reduce((a, [, i]) => a + i.length, 0);
+  return `${gHead('مركز تطوير حاضر', 'خريطة الهيكل، ومقترحات التطوير، وحالة تنفيذ كل تحسين — تتحدث مع كل إصدار.', dl && can('export') ? '<button class="btn" data-act="h-road-print">طباعة الخطة</button>' : '')}
+  <div class="tiles kpi"><div class="tile ok"><b>${hCount('done')}</b><span>منفَّذ</span></div><div class="tile info"><b>${hCount('next')}</b><span>قيد التنفيذ</span></div><div class="tile"><b>${hCount('plan')}</b><span>مخطَّط</span></div><div class="tile warn"><b>${hCount('ask')}</b><span>ينتظر قرارك</span></div><div class="tile"><b>${all}</b><span>إجمالي البنود</span></div></div>
+  ${hbars('حجم كل قسم في القائمة (عدد الواجهات)', groups.map((g) => ({ label: g.label, عناصر: g.n })), [['عناصر', 'عناصر', 'c5']])}
+  <section class="panel"><h2>خريطة الهيكل الحالية</h2><div class="tw"><table><thead><tr><th>القسم</th><th class="n">الواجهات</th><th>المحتوى</th></tr></thead><tbody>${NAV.map(([g, items]) => `<tr><td><b>${esc(g || 'الرئيسية')}</b></td><td class="n">${items.length}</td><td style="font-size:12.5px">${items.map((x) => esc(x[1])).join(' • ')}</td></tr>`).join('')}</tbody></table></div><div class="sub">إجمالي الواجهات المتاحة لدورك: ${NAV.reduce((a, [, i]) => a + i.length, 0)}</div></section>
+  ${HROAD.map(([g, items]) => `<section class="panel"><h2>${esc(g)}</h2><div class="tw"><table><thead><tr><th>البند</th><th class="n">الحالة</th><th>التفصيل</th></tr></thead><tbody>${items.map((x) => `<tr><td><b>${esc(x[0])}</b></td><td class="n"><span class="chip ${HST[x[1]][1]}">${HST[x[1]][0]}</span></td><td style="font-size:12.5px">${esc(x[2] || '—')}</td></tr>`).join('')}</tbody></table></div></section>`).join('')}
+  <section class="panel"><h2>النسخة الاحتياطية</h2><div>تصدير كل بيانات المنصة في ملف واحد يبقى عندك، ويُسجَّل التصدير في سجل التدقيق.</div><div class="row">${isAdmin() ? '<button class="btn p" data-act="h-backup">تصدير نسخة احتياطية الآن</button>' : '<span class="sub">التصدير الشامل لمسؤول المنصة.</span>'}</div></section>`;
+};
+ACT['h-road-print'] = () => {
+  const body = `${gDocTop('خطة تطوير منصة حاضر', null)}${HROAD.map(([g, items]) => `<h3>${esc(g)}</h3><table><thead><tr><th>البند</th><th>الحالة</th><th>التفصيل</th></tr></thead><tbody>${items.map((x) => `<tr><td>${esc(x[0])}</td><td>${HST[x[1]][0]}</td><td>${esc(x[2] || '')}</td></tr>`).join('')}</tbody></table>`).join('')}<p>طُبعت ${gDT(new Date().toISOString())}</p>`;
+  printDoc('خطة تطوير منصة حاضر', body);
+};
+/* ---------- القائمة: مدخل الإشعارات أولاً، والمصفوفة والمركز في الإدارة والأدوات ---------- */
+NAV[0][1].push(['inbox', 'مركز الإشعارات']);
+NAV.find((g) => g[0] === 'الأدوات')[1].push(['perms', 'مصفوفة الصلاحيات']);
+NAV.find((g) => g[0] === 'الإدارة')[1].push(['devcenter', 'مركز تطوير حاضر', 'admin']);
+
+/* واجهة «السجلات» القديمة تبقى كما هي، ويُضاف إليها مدخل للسجل المحمي */
+{
+  const prev = VIEWS.log;
+  VIEWS.log = () => prev() + `<section class="panel"><h2>السجل المحمي</h2><div>كل ما تراه أعلاه يُكتب أيضاً في سجل التدقيق المحمي: وثيقة لكل مستخدم لا يكتب فيها غيره، وأرشفة عند الامتلاء لا حذف، مع تصفية وتصدير إلى Excel.</div><div class="row"><button class="btn p" data-act="h-go" data-v="glog" data-crn="">افتح سجل العمليات والتدقيق</button></div></section>`;
+}
+
+/* ====================================================================
    نظام النوافذ الموحد لمنصة حاضر — أربعة أنماط لكل نافذة بحسب محتواها:
    sm صغيرة وسطية للتأكيد • md وسطية واسعة للنماذج
    wide عريضة من أعلى مساحة المحتوى للجداول والبيانات • side لوحة جانبية للتفاصيل
@@ -5270,6 +5500,273 @@ document.addEventListener('click', (ev) => { if (ev.target.id === 'modal') { ev.
   const want = ['', 'التحضير والمتابعة', 'إدارة الاختبارات ورصد الدرجات', 'الإرشاد والسلوك', 'التقارير', 'الأدوات', 'الإدارة'];
   NAV.sort((a, b) => (want.indexOf(a[0]) + 1 || 50) - (want.indexOf(b[0]) + 1 || 50));
 })();
+
+/* ====================================================================
+   الموجة الثانية: إعادة التنظيم
+   1) لوحة قيادة واحدة ببطاقات قابلة للنقر تتصدر الرئيسية.
+   2) بحث موحد: متدرب أو شعبة أو واجهة، من مكان واحد.
+   3) مركز التقارير: مدخل واحد لكل تقارير المنصة بلا نقل أي واجهة.
+   4) مسار تنقل وزر رجوع في كل واجهة.
+   تُضيف ولا تحذف: كل واجهة ووظيفة سابقة باقية كما هي.
+   ==================================================================== */
+/* ---------- 1) لوحة القيادة الموحدة ---------- */
+function hKpi() {
+  const m = A.m, t = today(), d = H.dashboard(m, t, nowMin());
+  const tot = d.pres + d.abs + d.late + d.exc;
+  const o = { trainees: d.unique, rate: tot ? Math.round(((d.pres + d.late) / tot) * 100) : null, abs: d.abs, late: d.late, exc: d.exc, near: 0, reached: 0, viol: 0, cases: 0, gopen: 0, gready: 0, tacc: 0, urgent: 0 };
+  try { const a = alertRows(m); o.near = a.near.length; o.reached = a.reached.length; } catch (e) { /* */ }
+  try { o.viol = Object.values(A.raw.bviol || {}).filter((v) => v && v.status && !/مغلق|ملغ/.test(v.status)).length; } catch (e) { /* */ }
+  try { o.cases = Object.values(A.raw.bcase || {}).filter((c) => c && c.status && !/مغلق/.test(c.status)).length; } catch (e) { /* */ }
+  try { const secs = gSecs().filter((s) => gList(s.crn)); o.gopen = secs.filter((s) => { const k = gSt(s).k; return k !== 'closed' && k !== 'synced'; }).length; o.gready = secs.filter((s) => gSt(s).k === 'ready' || gSt(s).k === 'sched').length; } catch (e) { /* */ }
+  try { o.tacc = tRoster().filter((x) => tMine(x)).filter((x) => { const a = tAcc(x.id); return !a || !(a.deliv && a.deliv.at); }).length; } catch (e) { /* */ }
+  try { o.urgent = hInbox().filter((r) => r.p === 1).length; } catch (e) { /* */ }
+  return o;
+}
+const hTile = (v, label, sub, view, kind) => `<div class="tile act ${kind || ''}" data-act="h-go" data-v="${view}" data-crn="" role="button" tabindex="0" title="افتح ${esc(label)}"><b>${v === null ? '—' : v}</b><span>${esc(label)}</span><small>${esc(sub)}</small></div>`;
+function hCommand() {
+  let k; try { k = hKpi(); } catch (e) { return ''; }
+  return `<section class="panel hcmd"><div class="row between"><h2 style="margin:0">لوحة القيادة</h2><div class="sub">كل بطاقة تفتح موضعها</div></div>
+  <div class="tiles kpi">
+    ${hTile(k.urgent, 'يحتاج تدخلاً عاجلاً', 'مركز الإشعارات', 'inbox', k.urgent ? 'bad' : 'ok')}
+    ${hTile(k.trainees, 'المتدربون', 'في شعبك', 'roll')}
+    ${hTile(k.rate === null ? null : k.rate + '%', 'حضور اليوم', `غياب ${k.abs} • تأخر ${k.late} • عذر ${k.exc}`, 'roll', k.rate !== null && k.rate < 85 ? 'warn' : 'ok')}
+    ${hTile(k.near, 'يفصلهم غياب واحد', 'عن الإنذار أو الحرمان', 'alerts', k.near ? 'warn' : '')}
+    ${hTile(k.reached, 'بلغوا الحد', 'إنذار أو حرمان', 'alerts', k.reached ? 'bad' : '')}
+    ${hTile(k.viol, 'مخالفات قيد المتابعة', 'الإرشاد والسلوك', 'bviol', k.viol ? 'warn' : '')}
+    ${hTile(k.cases, 'حالات إرشادية مفتوحة', 'الإرشاد والسلوك', 'bcases')}
+    ${hTile(k.gopen, 'شعب لم يُغلق رصدها', 'إدارة الاختبارات', 'gsecs')}
+    ${hTile(k.gready, 'جاهزة للرفع إلى رايات', 'جدولة الرفع', 'gsched', k.gready ? 'ok' : '')}
+    ${hTile(k.tacc, 'حسابات لم تُسلَّم', 'حسابات المتدربين', 'taccs', k.tacc ? 'warn' : 'ok')}
+  </div></section>`;
+}
+/* تُركَّب اللوحة بعد رأس الصفحة في الرئيسية، فلا تُمس شيفرة الواجهة القديمة */
+/* ---------- 2) البحث الموحد ---------- */
+const HVIEWS = () => { const o = []; NAV.forEach(([g, items]) => items.forEach((x) => o.push({ k: x[0], label: x[1], grp: g || 'الرئيسية', perm: x[2] }))); return o; };
+function hFind(q) {
+  const n = G.normName(q), out = { people: [], secs: [], views: [] };
+  if (!n || n.length < 2) return out;
+  const seen = {};
+  ((A.m && A.m.sections) || []).forEach((s) => {
+    if (G.normName(`${s.crn} ${s.course} ${s.kind}`).includes(n)) out.secs.push({ crn: s.crn, course: s.course, kind: s.kind, n: s.rows.length });
+    s.rows.forEach((r) => {
+      if (!G.normName(`${r.name} ${r.id}`).includes(n) || seen[r.id]) return;
+      seen[r.id] = 1; out.people.push({ id: r.id, name: r.name, crn: s.crn, course: s.course });
+    });
+  });
+  HVIEWS().forEach((v) => { if (G.normName(v.label + ' ' + v.grp).includes(n) && (!v.perm || (v.perm === 'admin' ? isAdmin() : can(v.perm)))) out.views.push(v); });
+  return out;
+}
+VIEWS.find = () => {
+  const q = A.hq || '', r = hFind(q);
+  const sec = (title, rows) => (rows.length ? `<section class="panel"><h2>${title} (${rows.length})</h2><div class="tw" style="max-height:38vh;overflow:auto"><table><tbody>${rows.join('')}</tbody></table></div></section>` : '');
+  return `${gHead('البحث الموحد', 'ابحث باسم المتدرب أو رقمه التدريبي أو رقم الشعبة أو اسم واجهة، وافتح الموضع مباشرة.')}
+  <section class="panel"><div class="row"><input type="search" id="hQ" placeholder="اسم متدرب، رقم تدريبي، رقم شعبة، اسم واجهة…" value="${esc(q)}" data-change="h-q" style="flex:1;min-width:240px" autofocus><button class="btn" data-act="h-qgo">ابحث</button></div>
+  <div class="sub">${q.length >= 2 ? `نتائج البحث عن «${esc(q)}»: ${r.people.length + r.secs.length + r.views.length}` : 'اكتب حرفين على الأقل.'}</div></section>
+  ${sec('متدربون', r.people.slice(0, 60).map((x) => `<tr><td><b>${esc(x.name)}</b><br><small class="sub">${esc(x.course)} — الشعبة ${x.crn}</small></td><td class="n" dir="ltr">${esc(x.id)}</td><td class="n"><div class="row"><button class="btn s" data-act="h-go" data-v="roll" data-crn="${x.crn}">التحضير</button><button class="btn s" data-act="h-go" data-v="bpeople" data-crn="">الإرشاد</button><button class="btn s" data-act="h-go" data-v="taccs" data-crn="">الحساب</button></div></td></tr>`))}
+  ${sec('شعب', r.secs.map((x) => `<tr><td><b>الشعبة ${esc(x.crn)}</b><br><small class="sub">${esc(x.course)} — ${esc(x.kind)} — ${x.n} متدرباً</small></td><td class="n"><div class="row"><button class="btn s" data-act="h-go" data-v="roll" data-crn="${x.crn}">التحضير</button><button class="btn s" data-act="h-go" data-v="gsec" data-crn="${x.crn}">الدرجات</button></div></td></tr>`))}
+  ${sec('واجهات', r.views.map((x) => `<tr><td><b>${esc(x.label)}</b><br><small class="sub">${esc(x.grp)}</small></td><td class="n"><button class="btn s" data-act="h-go" data-v="${x.k}" data-crn="">افتح</button></td></tr>`))}`;
+};
+Object.assign(CHG, { 'h-q': (e) => { A.hq = e.value; clearTimeout(A.hqT); A.hqT = setTimeout(() => { if (A.view === 'find') { render(true); const i = $('#hQ'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } } }, 220); } });
+ACT['h-qgo'] = () => { const i = $('#hQ'); if (i) A.hq = i.value; render(true); };
+VIEW_CHG.add('h-q'); VIEW_ACTS.add('h-qgo');
+/* ---------- 3) مركز التقارير ---------- */
+const HREP = [
+  ['reports', 'تقارير التحضير', 'كشوف الحضور والغياب والنسب لكل شعبة ومتدرب، مع الطباعة والتصدير.'],
+  ['notice', 'نماذج الإنذار', 'نموذج إنذار جاهز للطباعة لكل متدرب بلغ الحد.'],
+  ['excuses', 'سجل الاستئذان', 'الأعذار المسجلة وحالاتها.'],
+  ['greports', 'تقارير الدرجات', 'كشوف الرصد والتوزيع وحالات الاعتماد والرفع.'],
+  ['breports', 'تقارير الإرشاد والسلوك', 'المخالفات والحالات والإجراءات.'],
+  ['alerts', 'الإنذار المبكر', 'من يقترب من الإنذار والحرمان قبل وقوعه.'],
+  ['insights', 'التحليلات الذكية', 'مؤشرات وتحليلات على بيانات التحضير.'],
+  ['glog', 'سجل العمليات والتدقيق', 'كل العمليات الحساسة، قابلة للتصفية والتصدير.'],
+];
+VIEWS.rephub = () => {
+  const av = new Set(HVIEWS().map((v) => v.k));
+  return `${gHead('مركز التقارير', 'كل تقارير المنصة من مدخل واحد: التحضير والإنذار والدرجات والإرشاد والسجلات.')}
+  <section class="panel"><div class="tw"><table><thead><tr><th>التقرير</th><th>ما يعرضه</th><th class="n">الإجراء</th></tr></thead><tbody>${HREP.filter((r) => av.has(r[0]) || VIEWS[r[0]]).map((r) => `<tr><td><b>${esc(r[1])}</b></td><td style="font-size:12.5px">${esc(r[2])}</td><td class="n"><button class="btn s p" data-act="h-go" data-v="${r[0]}" data-crn="">افتح</button></td></tr>`).join('')}</tbody></table></div></section>
+  ${dl && can('export') ? '<div class="gnote info">كل تقرير يُطبع أو يُصدَّر من داخله: الطباعة بهوية الكلية، والتصدير إلى Excel حيث يتاح.</div>' : ''}`;
+};
+/* ---------- 4) مسار التنقل وزر الرجوع ---------- */
+const HCRUMB = { gsec: ['إدارة الاختبارات ورصد الدرجات', 'تفاصيل الشعبة'], report: ['التقارير', 'تقرير مفصل'], weekly: ['التقارير', 'التقرير الأسبوعي'], find: ['', 'البحث الموحد'], rephub: ['التقارير', 'مركز التقارير'] };
+const HBACK = [];
+function hCrumbNow() {
+  const main = $('#main'); if (!main) return;
+  const old = main.querySelector('.hcrumb'); if (old) old.remove();
+  if (!A.me || A.view === 'home') return;
+  let grp = '', label = '';
+  const v = HVIEWS().find((x) => x.k === A.view);
+  if (v) { grp = v.grp === 'الرئيسية' ? '' : v.grp; label = v.label; }
+  else if (HCRUMB[A.view]) { grp = HCRUMB[A.view][0]; label = HCRUMB[A.view][1]; }
+  else return;
+  const back = HBACK.length > 1 ? HBACK[HBACK.length - 2] : null;
+  const bl = back ? (HVIEWS().find((x) => x.k === back) || {}).label || (HCRUMB[back] || [])[1] || 'السابق' : '';
+  const el = document.createElement('nav');
+  el.className = 'hcrumb'; el.setAttribute('aria-label', 'مسار التنقل');
+  el.innerHTML = `${back ? `<button class="btn s" data-act="h-back" title="رجوع إلى ${esc(bl)}">رجوع</button>` : ''}<a href="#home" data-v="home">الرئيسية</a>${grp ? `<i>›</i><span>${esc(grp)}</span>` : ''}<i>›</i><b>${esc(label)}</b>`;
+  main.insertBefore(el, main.firstChild);
+}
+ACT['h-back'] = () => { HBACK.pop(); const to = HBACK.pop() || 'home'; go(to); };
+VIEW_ACTS.add('h-back');
+{
+  const prev = render;
+  render = function (keep) {
+    prev(keep);
+    try {
+      if (A.me && A.view && HBACK[HBACK.length - 1] !== A.view) { HBACK.push(A.view); if (HBACK.length > 12) HBACK.shift(); }
+      hCrumbNow();
+      if (A.me && A.view === 'home') { const main = $('#main'); if (main && !main.querySelector('.hcmd')) { const head = main.querySelector('.head'), box = document.createElement('div'); box.innerHTML = hCommand(); const el = box.firstElementChild; if (el) { if (head && head.nextSibling) main.insertBefore(el, head.nextSibling); else main.appendChild(el); } } }
+    } catch (e) { /* لا يمنع العرض */ }
+  };
+}
+/* ---------- القائمة: مدخلان جديدان بلا نقل أي واجهة ---------- */
+NAV.find((g) => g[0] === 'التقارير')[1].unshift(['rephub', 'مركز التقارير']);
+(() => {
+  /* مركز الإشعارات والبحث في أعلى القائمة: كلاهما يخدم كل الأقسام */
+  NAV.forEach((g, i) => { if (!i) return; const k = g[1].findIndex((x) => x[0] === 'inbox'); if (k >= 0) g[1].splice(k, 1); });
+  const top = NAV[0][1];
+  if (!top.some((x) => x[0] === 'inbox')) top.splice(1, 0, ['inbox', 'مركز الإشعارات']);
+  if (!top.some((x) => x[0] === 'find')) top.push(['find', 'البحث الموحد']);
+  const gl = NAV.find((g) => g[0] === 'إدارة الاختبارات ورصد الدرجات');
+  if (gl) { const it = gl[1].find((x) => x[0] === 'glog'); if (it) it[1] = 'سجل العمليات والتدقيق'; }
+})();
+
+/* ====================================================================
+   الموجة الثالثة: الصقل البصري وإمكانية الوصول
+   1) فرز الأعمدة وتجميد الرؤوس في جداول الواجهات، تلقائياً وبلا تعديل أي واجهة.
+   2) مجموعة أيقونات موحدة في القائمة الجانبية.
+   3) حالة فارغة واضحة لكل جدول لا بيانات فيه.
+   4) إمكانية الوصول: تخطٍّ إلى المحتوى، aria-current، scope للأعمدة،
+      تفعيل البطاقات بلوحة المفاتيح، وإعلان ترتيب الفرز.
+   تعمل كلها بعد كل عرض، ولا تمس منطق أي وظيفة ولا بياناتها.
+   ==================================================================== */
+const HICON = {
+  home: 'M4 11.2 12 4l8 7.2M6 10v10h12V10',
+  inbox: 'M4 13h4l2 3h4l2-3h4M4 13 6.5 5h11L20 13v6H4z',
+  find: 'M10.5 17a6.5 6.5 0 110-13 6.5 6.5 0 010 13zm4.8-1.7L20 20',
+  roll: 'M5 6.5h14M5 12h14M5 17.5h9M19.5 16.2 17 18.7l-1.5-1.5',
+  qr: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zm4 0h2v2h-2zm-4 4h6v2h-6z',
+  sync: 'M12 20V5m0 0 5 5m-5-5-5 5M4 21h16',
+  alerts: 'M12 3.6 2.6 20h18.8L12 3.6zm0 5.6v5.3m0 2.4v.9',
+  insights: 'M4 20V9m5 11V4m5 16v-8m5 8V7',
+  dash: 'M20.5 18a9 9 0 10-17 0M12 13l4-3.5',
+  gdash: 'M20.5 18a9 9 0 10-17 0M12 13l4-3.5',
+  gsecs: 'M3.5 5.5h17v13h-17zM3.5 10h17M9.5 10v8.5M15 10v8.5',
+  gexams: 'M6 3.5h9l4 4V20.5H6zM15 3.5v4h4M9 13h6M9 16.5h4',
+  gentry: 'M4 20h4L19 9a2.5 2.5 0 00-3.5-3.5L4.5 16.5 4 20z',
+  greview: 'M12 21a9 9 0 110-18 9 9 0 010 18zm-3.8-9.2L11 14.6l5-5.4',
+  gsched: 'M12 21a9 9 0 110-18 9 9 0 010 18zm0-13.5V12l3.5 2',
+  gsync: 'M12 20V5m0 0 5 5m-5-5-5 5M4 21h16',
+  glog: 'M5 4.5h14v15H5zM8.5 9h7M8.5 12.5h7M8.5 16h4',
+  greports: 'M6 3.5h12v17H6zM9 8h6M9 12h6M9 16h4',
+  gcfg: 'M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4zM4 12h2m12 0h2M12 4v2m0 12v2M6.3 6.3l1.5 1.5m8.4 8.4 1.5 1.5m0-11.4-1.5 1.5M7.8 16.2l-1.5 1.5',
+  bdash: 'M12 11.5a3.8 3.8 0 100-7.6 3.8 3.8 0 000 7.6zM4.6 20.2a7.4 7.4 0 0114.8 0',
+  binbox: 'M4 13h4l2 3h4l2-3h4M4 13 6.5 5h11L20 13v6H4z',
+  bviol: 'M12 3.6 2.6 20h18.8L12 3.6zm0 5.6v5.3m0 2.4v.9',
+  bcases: 'M4 7.5h16v12H4zM9 7.5V5h6v2.5M4 13h16',
+  bpeople: 'M9 11a3.4 3.4 0 100-6.8A3.4 3.4 0 009 11zm-6 9a6.6 6.6 0 0112 0M16 11.4a2.8 2.8 0 100-5.6M18 20a5 5 0 00-2-4',
+  bforms: 'M6 3.5h12v17H6zM9 8h6M9 12h6M9 16h3',
+  breports: 'M6 3.5h12v17H6zM9 8h6M9 12h6M9 16h4',
+  rephub: 'M4 7.5h5l2 2.5h9v9.5H4zM4 7.5V5h5',
+  reports: 'M6 3.5h12v17H6zM9 8h6M9 12h6M9 16h4',
+  notice: 'M6 3.5h9l4 4V20.5H6zM15 3.5v4h4M9.5 12h6M9.5 15.5h4',
+  excuses: 'M5 5.5h14v13H5zM5 10h14M9 3.5v4M15 3.5v4',
+  calendar: 'M4 6.5h16v13H4zM4 11h16M8.5 3.5v4M15.5 3.5v4',
+  guide: 'M5 4.5h6.5a2 2 0 012 2V20H7a2 2 0 00-2 2zM19 4.5h-5a2 2 0 00-2 2V20h5a2 2 0 012 2z',
+  taccs: 'M14.5 10.5a3.5 3.5 0 10-3.5 3.5M10.5 14 4 20.5V22h3v-2h2v-2h1.5z',
+  perms: 'M12 3.5 5 6v6c0 4.3 3 7.6 7 8.5 4-.9 7-4.2 7-8.5V6l-7-2.5zm-2.6 8.3 2.1 2.2 3.5-3.6',
+  devcenter: 'M4 5.5 9.5 4l5 1.5L20 4v14.5L14.5 20l-5-1.5L4 20zM9.5 4v14.5M14.5 5.5V20',
+  users: 'M9 11a3.4 3.4 0 100-6.8A3.4 3.4 0 009 11zm-6 9a6.6 6.6 0 0112 0M16 11.4a2.8 2.8 0 100-5.6M18 20a5 5 0 00-2-4',
+  secadmin: 'M3.5 5.5h17v13h-17zM3.5 10h17M9.5 10v8.5M15 10v8.5',
+  org: 'M12 3.5 20 8v12H4V8l8-4.5zM9.5 20v-6h5v6',
+  logins: 'M10 4.5H5v15h5M14 8l4 4-4 4M9 12h9',
+  theme: 'M12 3.5a8.5 8.5 0 000 17c1.4 0 2-1 2-2s-.7-2-2-2h-1a2 2 0 010-4h3a5 5 0 005-5c0-2.3-3-4-7-4z',
+  prefs: 'M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4zM4 12h2m12 0h2M12 4v2m0 12v2M6.3 6.3l1.5 1.5m8.4 8.4 1.5 1.5m0-11.4-1.5 1.5M7.8 16.2l-1.5 1.5',
+  log: 'M5 4.5h14v15H5zM8.5 9h7M8.5 12.5h7M8.5 16h4',
+  sec: 'M3.5 5.5h17v13h-17z',
+};
+const hSvg = (k) => `<svg class="nico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${HICON[k] || HICON.sec}"/></svg>`;
+function hNavIcons() {
+  const nav = $('#nav'); if (!nav) return;
+  nav.querySelectorAll('a[data-v]').forEach((a) => {
+    if (!a.querySelector('.nico')) a.insertAdjacentHTML('afterbegin', hSvg(a.dataset.v));
+    if (a.dataset.v === A.view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+}
+/* ---------- فرز الأعمدة ---------- */
+const hNum = (s) => { const t = String(s).trim().replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[\s,٬%٪]/g, ''); return /^-?\d+(\.\d+)?$/.test(t) ? parseFloat(t) : null; };
+function hSortTable(tb, ci, dir) {
+  const body = tb.tBodies[0]; if (!body) return;
+  const rows = [...body.rows];
+  const key = (r) => { const c = r.cells[ci]; return c ? (c.innerText || '').trim() : ''; };
+  const num = rows.every((r) => { const v = key(r); return v === '' || v === '—' || hNum(v) !== null; });
+  rows.sort((a, b) => {
+    const x = key(a), y = key(b);
+    if (num) { const nx = hNum(x), ny = hNum(y); return ((nx === null ? -Infinity : nx) - (ny === null ? -Infinity : ny)) * dir; }
+    return x.localeCompare(y, 'ar') * dir;
+  });
+  rows.forEach((r) => body.appendChild(r));
+}
+function hEnhanceTables() {
+  const main = $('#main'); if (!main) return;
+  main.querySelectorAll('table').forEach((tb) => {
+    const head = tb.tHead, body = tb.tBodies[0];
+    if (!head || !body) return;
+    /* الجداول التي يُدخل فيها المدرب بيانات لا تُفرز: الفرز يُقلق موضع الصف أثناء العمل */
+    const live = !!tb.querySelector('input,select,textarea,[contenteditable]');
+    if (body.rows.length && !body.querySelector('.hempty')) {
+      if (!live && body.rows.length >= 4 && !tb.dataset.hs) {
+        tb.dataset.hs = '1';
+        const tw = tb.closest('.tw');
+        if (tw && tw.scrollHeight > tw.clientHeight + 4) tb.classList.add('thsticky');
+        [...head.rows[0].cells].forEach((th, i) => {
+          th.setAttribute('scope', 'col');
+          if (th.classList.contains('nos')) return;
+          th.classList.add('hsort'); th.tabIndex = 0; th.title = 'انقر للفرز';
+          const run = () => {
+            const cur = th.dataset.dir === 'asc' ? -1 : 1;
+            [...head.rows[0].cells].forEach((o) => { delete o.dataset.dir; o.removeAttribute('aria-sort'); o.classList.remove('up', 'dn'); });
+            th.dataset.dir = cur === 1 ? 'asc' : 'desc';
+            th.setAttribute('aria-sort', cur === 1 ? 'ascending' : 'descending');
+            th.classList.add(cur === 1 ? 'up' : 'dn');
+            hSortTable(tb, i, cur);
+          };
+          th.addEventListener('click', run);
+          th.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); run(); } });
+        });
+      } else if (live) [...head.rows[0].cells].forEach((th) => th.setAttribute('scope', 'col'));
+    } else if (!body.rows.length) {
+      [...head.rows[0].cells].forEach((th) => th.setAttribute('scope', 'col'));
+      const cols = head.rows[0].cells.length, tr = body.insertRow();
+      tr.className = 'hempty';
+      const td = tr.insertCell(); td.colSpan = cols;
+      td.innerHTML = '<div class="hemptyb"><b>لا توجد بيانات لعرضها</b><span>سيظهر الجدول هنا بعد إضافة البيانات أو تغيير التصفية.</span></div>';
+    }
+  });
+}
+/* ---------- إمكانية الوصول ---------- */
+function hA11y() {
+  const main = $('#main'); if (!main) return;
+  if (!main.id) main.id = 'main';
+  main.setAttribute('role', 'main');
+  if (!$('#hskip')) {
+    const s = document.createElement('a');
+    s.id = 'hskip'; s.href = '#main'; s.textContent = 'تخطَّ إلى المحتوى';
+    s.addEventListener('click', (e) => { e.preventDefault(); const m = $('#main'); if (m) { m.tabIndex = -1; m.focus(); } });
+    document.body.insertBefore(s, document.body.firstChild);
+  }
+  const nav = $('#nav'); if (nav) { nav.setAttribute('role', 'navigation'); nav.setAttribute('aria-label', 'أقسام المنصة'); }
+  main.querySelectorAll('.tile.act').forEach((t) => {
+    if (t.dataset.ha) return; t.dataset.ha = '1';
+    t.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); t.click(); } });
+  });
+}
+{
+  const prev = render;
+  render = function (keep) {
+    prev(keep);
+    try { hNavIcons(); hEnhanceTables(); hA11y(); } catch (e) { /* الصقل لا يمنع العرض */ }
+  };
+}
 
 
 boot();

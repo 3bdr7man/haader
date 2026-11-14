@@ -1,0 +1,20 @@
+/* أيقونات القائمة */
+#nav a{display:flex;align-items:center;gap:8px}
+#nav .nico{width:17px;height:17px;flex:0 0 17px;opacity:.75}
+#nav a[aria-current=page] .nico,#nav a:hover .nico{opacity:1}
+#nav a[aria-current=page]{font-weight:700}
+/* فرز الأعمدة */
+th.hsort{cursor:pointer;user-select:none;position:relative;padding-inline-end:16px}
+th.hsort:hover{color:var(--pri)}
+th.hsort:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
+th.hsort::after{content:'⇅';position:absolute;inset-inline-end:4px;opacity:.35;font-size:11px}
+th.hsort.up::after{content:'▲';opacity:.9;font-size:9px}
+th.hsort.dn::after{content:'▼';opacity:.9;font-size:9px}
+table.thsticky thead th{position:sticky;top:0;z-index:2;background:var(--surface2)}
+/* الحالة الفارغة داخل الجداول */
+tr.hempty td{padding:18px 10px!important;text-align:center;background:transparent}
+.hemptyb b{display:block;color:var(--ink2);font-size:13.5px;margin-bottom:2px}
+.hemptyb span{display:block;color:var(--ink3);font-size:12px}
+/* تخطٍّ إلى المحتوى */
+#hskip{position:fixed;inset-inline-start:-9999px;top:8px;z-index:9999;background:var(--surface);color:var(--ink);border:1px solid var(--pri);border-radius:8px;padding:8px 12px;font:inherit;text-decoration:none}
+#hskip:focus{inset-inline-start:8px}

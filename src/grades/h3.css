@@ -18,3 +18,7 @@ tr.hempty td{padding:18px 10px!important;text-align:center;background:transparen
 /* تخطٍّ إلى المحتوى */
 #hskip{position:fixed;inset-inline-start:-9999px;top:8px;z-index:9999;background:var(--surface);color:var(--ink);border:1px solid var(--pri);border-radius:8px;padding:8px 12px;font:inherit;text-decoration:none}
 #hskip:focus{inset-inline-start:8px}
+/* سمة «حاضر»: أزرق الهوية رئيسياً، وأخضر الإنجاز مميزاً */
+:root[data-skin="haader"]{--nav:#002B57;--nav2:#00457E;--navact:#0A5FA8;--pri:#0066CC;--blue:#0066CC;--teal:#1B9E63}
+@media (prefers-color-scheme:dark){:root[data-skin="haader"]:not([data-theme="light"]){--blue:#7CBAF5;--teal:#49C98A}}
+:root[data-skin="haader"][data-theme="dark"]{--blue:#7CBAF5;--teal:#49C98A}

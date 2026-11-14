@@ -592,6 +592,10 @@ tr.hempty td{padding:18px 10px!important;text-align:center;background:transparen
 /* تخطٍّ إلى المحتوى */
 #hskip{position:fixed;inset-inline-start:-9999px;top:8px;z-index:9999;background:var(--surface);color:var(--ink);border:1px solid var(--pri);border-radius:8px;padding:8px 12px;font:inherit;text-decoration:none}
 #hskip:focus{inset-inline-start:8px}
+/* سمة «حاضر»: أزرق الهوية رئيسياً، وأخضر الإنجاز مميزاً */
+:root[data-skin="haader"]{--nav:#002B57;--nav2:#00457E;--navact:#0A5FA8;--pri:#0066CC;--blue:#0066CC;--teal:#1B9E63}
+@media (prefers-color-scheme:dark){:root[data-skin="haader"]:not([data-theme="light"]){--blue:#7CBAF5;--teal:#49C98A}}
+:root[data-skin="haader"][data-theme="dark"]{--blue:#7CBAF5;--teal:#49C98A}
 
 /* ---------- إدارة الاختبارات ورصد الدرجات: النسق الزجاجي المعتمد في المنصة ---------- */
 .gbar{display:inline-block;width:92px;height:9px;border-radius:99px;background:color-mix(in srgb,var(--ink3) 18%,transparent);vertical-align:middle;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,20,50,.12)}
@@ -5352,7 +5356,7 @@ const HROAD = [
     ['أنواع رسوم بيانية إضافية', 'plan', 'المنصة اليوم فيها نوع واحد: أشرطة أفقية.'],
   ]],
   ['ما ينتظر قراراً', [
-    ['اللون الرئيسي للهوية', 'ask', 'هوية التدريب التقني أزرق #003366 و#0066CC وخط Cairo، وطلبت الأخضر رئيسياً. توصيتي: الأزرق للهوية والأخضر للإنجاز والتميّز.'],
+    ['اللون الرئيسي للهوية', 'done', 'صار سمةً متاحة في «سمات الألوان» باسم «حاضر: أزرق الهوية وأخضر الإنجاز»: أزرق الهوية في الرأس والقائمة والطباعة، والأخضر للمؤشرات والتقدم والإنجاز. والتبديل بنقرة، وبقية السمات باقية.'],
     ['صفحة متدرب واحدة تجمع التحضير والسلوك والدرجات والحساب', 'plan', ''],
     ['توسيع إدارة المدربين، والأسئلة الشائعة وطلب الدعم', 'plan', ''],
     ['القاعات والمعامل والجداول التدريبية', 'hold', 'لا مصدر بيانات لها عند المدرب، وإدخالها يدوياً عبء بلا مقابل.'],
@@ -5766,6 +5770,15 @@ function hA11y() {
     prev(keep);
     try { hNavIcons(); hEnhanceTables(); hA11y(); } catch (e) { /* الصقل لا يمنع العرض */ }
   };
+}
+
+/* ---------- سمة «حاضر»: أزرق الهوية لوناً رئيسياً وأخضر الإنجاز لوناً مميزاً ---------- */
+SKINS.unshift(['haader', 'حاضر: أزرق الهوية وأخضر الإنجاز', ['#003366', '#0066CC', '#1B9E63']]);
+{
+  const prev = VIEWS.theme;
+  VIEWS.theme = () => prev() + `<section class="panel"><h2>عن سمة «حاضر»</h2>
+  <div>هوية المؤسسة العامة للتدريب التقني والمهني تعتمد الأزرق الداكن <b dir="ltr">#003366</b> والأزرق الفاتح <b dir="ltr">#0066CC</b> وخط Cairo للعربية، وتمنع تعديل الهوية في وحداتها. ولأن المنصة تُعرض داخل الكلية وتُطبع تقاريرها باسمها، تحافظ سمة «حاضر» على أزرق الهوية في الرأس والقائمة والطباعة، وتجعل <b>الأخضر لون الإنجاز والانتظام</b> في المؤشرات وأشرطة التقدم وبطاقات لوحة القيادة.</div>
+  <div class="sub" style="margin-top:6px">وإن أردت الأخضر لوناً رئيسياً كاملاً فسمة «أخضر وطني» و«ألوان الشعار» متاحتان أعلاه، والتبديل فوري ويُطبَّق على كل المستخدمين.</div></section>`;
 }
 
 

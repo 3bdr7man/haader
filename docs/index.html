@@ -720,7 +720,7 @@ body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
 </div>
 <div id="toast" role="status" dir="rtl" hidden></div>
 <div id="tip" dir="rtl" hidden></div>
-<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="f1d69e0d23a2";</script>
+<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="963332b07264";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 /* ====================================================================
@@ -880,9 +880,28 @@ body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
     };
   }
   const newId = () => 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  /* استعلام بسيط بالواجهة نفسها: orderBy و limit و where (==) */
+  function query(col, q) {
+    const self = {
+      orderBy(f, dir) { return query(col, Object.assign({}, q, { order: (q.order || []).concat([`data->>${f}.${dir === 'desc' ? 'desc' : 'asc'}`]) })); },
+      limit(n) { return query(col, Object.assign({}, q, { limit: n })); },
+      where(f, op, v) { if (op !== '==') throw new HErr('عملية استعلام غير مدعومة', 400); return query(col, Object.assign({}, q, { where: (q.where || []).concat([`data->>${f}=eq.${esc(v)}`]) })); },
+      async get() {
+        let u = 'doc?col=eq.' + esc(col) + '&select=id,data';
+        (q.where || []).forEach((w) => { u += '&' + w; });
+        if ((q.order || []).length) u += '&order=' + q.order.join(',');
+        if (q.limit) u += '&limit=' + q.limit;
+        return snapOf(await api(u));
+      },
+    };
+    return self;
+  }
   function colRef(col) {
     return {
       path: col,
+      orderBy: (f, d) => query(col, {}).orderBy(f, d),
+      limit: (n) => query(col, {}).limit(n),
+      where: (f, o, v) => query(col, {}).where(f, o, v),
       onSnapshot(fn, err) {
         const x = { fn, err };
         (SUBS[col] = SUBS[col] || []).push(x);

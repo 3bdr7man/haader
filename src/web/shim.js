@@ -155,9 +155,28 @@
     };
   }
   const newId = () => 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  /* استعلام بسيط بالواجهة نفسها: orderBy و limit و where (==) */
+  function query(col, q) {
+    const self = {
+      orderBy(f, dir) { return query(col, Object.assign({}, q, { order: (q.order || []).concat([`data->>${f}.${dir === 'desc' ? 'desc' : 'asc'}`]) })); },
+      limit(n) { return query(col, Object.assign({}, q, { limit: n })); },
+      where(f, op, v) { if (op !== '==') throw new HErr('عملية استعلام غير مدعومة', 400); return query(col, Object.assign({}, q, { where: (q.where || []).concat([`data->>${f}=eq.${esc(v)}`]) })); },
+      async get() {
+        let u = 'doc?col=eq.' + esc(col) + '&select=id,data';
+        (q.where || []).forEach((w) => { u += '&' + w; });
+        if ((q.order || []).length) u += '&order=' + q.order.join(',');
+        if (q.limit) u += '&limit=' + q.limit;
+        return snapOf(await api(u));
+      },
+    };
+    return self;
+  }
   function colRef(col) {
     return {
       path: col,
+      orderBy: (f, d) => query(col, {}).orderBy(f, d),
+      limit: (n) => query(col, {}).limit(n),
+      where: (f, o, v) => query(col, {}).where(f, o, v),
       onSnapshot(fn, err) {
         const x = { fn, err };
         (SUBS[col] = SUBS[col] || []).push(x);

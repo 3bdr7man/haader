@@ -64,6 +64,8 @@ const gs = (crn) => JSON.parse(sql(`select data from doc where col='gsec' and id
   const browser = await chromium.launch(), errs = [];
   const mk = async () => { const c = await browser.newContext({ timezoneId: 'Asia/Riyadh', locale: 'ar-SA', viewport: { width: 1366, height: 860 }, acceptDownloads: true }); const p = await c.newPage(); await p.route('https://cdnjs.cloudflare.com/ajax/libs/xlsx/**', (r) => r.fulfill({ path: '/var/tmp/hstack/vendor/package/dist/xlsx.full.min.js', contentType: 'application/javascript' })); p.on('pageerror', (e) => errs.push(String(e).slice(0, 200))); return [c, p]; };
   const login = async (p, u, pw) => { await p.goto(URL0); await p.waitForSelector('#liU'); await p.fill('#liU', u); await p.fill('#liP', pw); await p.click('#liB'); await p.waitForFunction(() => typeof A !== 'undefined' && A.me && A.fresh && gReady(), null, { timeout: 30000 }); };
+  const upload = async (p, f) => { await p.click('[data-act="gx-imp"]'); await p.waitForSelector('#modal input[data-change="gx-file"]', { state: 'attached' }); await p.setInputFiles('#modal input[data-change="gx-file"]', f); };
+  const applyImp = async (p) => { await p.click('#modal [data-act="g-xin-ok"]'); await p.waitForFunction(() => /حُفظت الدرجات|اكتمل الاستيراد|لم يُحفظ/.test((document.querySelector('#modal h2') || {}).textContent || ''), null, { timeout: 15000 }); await p.click('#modal [data-act="modal-close"]'); };
   const saved = (p) => p.waitForFunction(() => /محفوظة/.test(document.querySelector('#saved').textContent), null, { timeout: 15000 });
 
   // 1) المسؤول يستورد التوزيع والشعب من المصنف الأصلي كما هو
@@ -92,8 +94,8 @@ const gs = (crn) => JSON.parse(sql(`select data from doc where col='gsec' and id
   [c, p] = await mk();
   await login(p, 't.ahmed', PW.t1);
   await p.evaluate(() => { A.gCrn = '63854'; go('gentry'); });
-  await p.waitForSelector('input[data-change="g-xin"]', { state: 'attached', timeout: 15000 });
-  await p.setInputFiles('input[data-change="g-xin"]', FILLED);
+  await p.waitForSelector('[data-act="gx-imp"]', { timeout: 15000 });
+  await upload(p, FILLED);
   await p.waitForSelector('#modal [data-act="g-xin-ok"]', { timeout: 15000 });
   const rt = await p.textContent('#modal');
   const [a, b, cc, d] = INFO['63854'].probe;
@@ -101,7 +103,7 @@ const gs = (crn) => JSON.parse(sql(`select data from doc where col='gsec' and id
   check('تُرفض البنود الناقصة برسالة واضحة', /بنود LEC1 ناقصة \(الشهري 1، الشهري 2\)/.test(rt), rt);
   check('يُرفض البند الذي يتجاوز حده', /الواجبات في LEC1: 7 تتجاوز حد البند 6/.test(rt), rt);
   await p.screenshot({ path: OUT + '/grades-review.png' });
-  await p.click('#modal [data-act="g-xin-ok"]'); await saved(p);
+  await applyImp(p);
   let m = gm('63854');
   check('LEC1 = مجموع البنود (5+4+8+9.5 = 26.5)', m.g && m.g[a] && m.g[a].LEC1 === 26.5, m.g && m.g[a]);
   check('LAB1 = 6+3+10+7 = 26، وLEC2 18، وLAB2 15', m.g[a].LAB1 === 26 && m.g[a].LEC2 === 18 && m.g[a].LAB2 === 15, m.g[a]);
@@ -116,27 +118,27 @@ const gs = (crn) => JSON.parse(sql(`select data from doc where col='gsec' and id
   check('…وبنود المتدرب ودرجته في الكشف', exp.row[li - 4] === 5 && exp.row[li - 1] === 9.5 && exp.row[li] === 26.5, exp.row);
   await p.evaluate(() => gExport(['63854'], 'x.xlsx')).catch(() => {});
   // 4) إعادة استيراد الملف نفسه: لا تغيير
-  await p.setInputFiles('input[data-change="g-xin"]', FILLED);
-  await p.waitForSelector('#modal [data-act="g-xin-ok"], #modal [data-act="modal-close"]', { timeout: 15000 });
+  await upload(p, FILLED);
+  await p.waitForFunction(() => /معاينة|لا شيء/.test((document.querySelector('#modal h2') || {}).textContent || ''), null, { timeout: 15000 });
   const rt2 = await p.textContent('#modal');
   check('إعادة الاستيراد: لا جديد، والمطابق 5', /درجات جديدة\s*0/.test(rt2) && /مطابقة للمحفوظ\s*5/.test(rt2), rt2.slice(0, 300));
   await p.click('#modal [data-act="modal-close"]');
   // 5) تعديل بند واحد في ملف آخر = تغيير يحتاج موافقة
   const F2 = OUT + '/filled2.xlsx';
   execFileSync('python3', ['-c', `import openpyxl,sys,warnings\nwarnings.filterwarnings('ignore')\nwb=openpyxl.load_workbook(sys.argv[1])\nws=wb['63854 التوجيه وا']\nfor r in range(7,ws.max_row+1):\n  if str(ws.cell(r,3).value)==sys.argv[3]: ws.cell(r,6).value=6\nwb.save(sys.argv[2])`, FILLED, F2, a]);
-  await p.setInputFiles('input[data-change="g-xin"]', F2);
+  await upload(p, F2);
   await p.waitForSelector('#modal [data-act="g-xin-ok"]', { timeout: 15000 });
   const rt3 = await p.textContent('#modal');
   check('تعديل بند الواجبات (5←6) يظهر تغييراً في LEC1 يحتاج موافقة', /تخالف المحفوظ\s*1/.test(rt3) && /26\.5/.test(rt3) && /27\.5/.test(rt3), rt3.slice(0, 500));
-  await p.check('#giOver'); await p.click('#modal [data-act="g-xin-ok"]'); await saved(p);
+  await p.check('#giOver'); await applyImp(p);
   m = gm('63854');
   check('بعد الموافقة: LEC1 = 27.5 والبند محدَّث', m.g[a].LEC1 === 27.5 && m.s[a].LEC1['الواجبات'] === 6, [m.g[a], m.s[a]]);
   // 6) شعبة بلا بنود (63905): أعمدة المكوّنات مباشرة
   await p.evaluate(() => { A.gCrn = '63905'; go('gentry'); });
-  await p.waitForFunction(() => document.querySelector('input[data-change="g-xin"]') && document.querySelector('input[data-change="g-xin"]').dataset.crn === '63905');
-  await p.setInputFiles('input[data-change="g-xin"]', FILLED);
+  await p.waitForFunction(() => document.querySelector('[data-act="gx-imp"]') && document.querySelector('[data-act="gx-imp"]').dataset.crn === '63905');
+  await upload(p, FILLED);
   await p.waitForSelector('#modal [data-act="g-xin-ok"]', { timeout: 15000 });
-  await p.click('#modal [data-act="g-xin-ok"]'); await saved(p);
+  await applyImp(p);
   const m5 = gm('63905'), p5 = INFO['63905'].probe[0];
   check('63905: LAB1 55 وLAB2 30', m5.g && m5.g[p5] && m5.g[p5].LAB1 === 55 && m5.g[p5].LAB2 === 30, m5.g);
   check('لا أخطاء JavaScript', errs.length === 0, errs);

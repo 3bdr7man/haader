@@ -47,3 +47,7 @@
 .wbtn.swtr{display:block;width:100%;margin:6px 0 4px;padding:7px 10px;border-radius:10px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;cursor:pointer}
 .wbtn.swtr.on{background:#F2B544;color:#1B2A3A;border-color:#F2B544}
 body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
+
+/* استيراد الدرجات من Excel */
+.gxopt{display:grid;gap:10px;margin:14px 0}
+.gxopt .ck{display:flex;gap:8px;align-items:center}

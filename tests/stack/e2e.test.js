@@ -91,6 +91,20 @@ const shellUp = (page) => page.waitForFunction(() => typeof A !== 'undefined' &&
   check('القائمة تُظهر أدوات الإدارة', await p.isVisible('#nav a[data-v="users"]'));
   await p.waitForFunction(() => A.m && A.m.sections.length === 2, null, { timeout: 15000 });
   check('المسؤول يرى كل الشعب', await p.evaluate(() => A.m.sections.length) === 2);
+  // الدخول بحسابه كمدرب (لصاحب المنصة وحده)
+  check('زر «الدخول بحسابي كمدرب» يظهر لحساب aalkhathami', await p.isVisible('#who [data-act="as-trainer"]'));
+  await p.click('#who [data-act="as-trainer"]');
+  await p.waitForFunction(() => A.asTrainer === true && !document.querySelector('#nav a[data-v="users"]'));
+  check('وضع المدرب: أدوات الإدارة مخفية', !(await p.isVisible('#nav a[data-v="users"]')) && await p.evaluate(() => !isAdmin()));
+  check('…والشعب المعروضة شعبه وحده', await p.evaluate((id) => A.m.sections.every((s) => s.trainer === id), IDS.admin));
+  await p.evaluate(() => { location.hash = 'users'; }); await p.waitForTimeout(500);
+  check('…وصفحات الإدارة لا تُفتح فيه', await p.evaluate(() => A.view) === 'home');
+  await p.screenshot({ path: OUT + '/admin-as-trainer.png' });
+  await p.reload(); await shellUp(p);
+  check('…ويبقى الوضع بعد إعادة التحميل', await p.evaluate(() => A.asTrainer === true));
+  await p.click('#who [data-act="as-trainer"]');
+  await p.waitForFunction(() => A.asTrainer === false && A.m.sections.length === 2);
+  check('العودة لحساب المسؤول تعيد الإدارة وكل الشعب', await p.isVisible('#nav a[data-v="users"]'));
   await p.reload(); await shellUp(p);
   check('إعادة تحميل الصفحة تحافظ على الجلسة', await p.evaluate(() => A.me && A.me.username) === 'aalkhathami');
   await p.screenshot({ path: OUT + '/admin-home.png' });
@@ -140,6 +154,7 @@ const shellUp = (page) => page.waitForFunction(() => typeof A !== 'undefined' &&
   await p.waitForFunction(() => A.m && A.m.sections.length >= 1, null, { timeout: 15000 });
   check('المدرب يرى شعبته وحدها', await p.evaluate(() => A.m.sections.map((s) => s.crn).join()) === '63854');
   check('اسم قسم المدرب تحت شعار المؤسسة', (await p.textContent('#sidedept')) === 'قسم الحاسب وتقنية المعلومات' && await p.evaluate(() => document.querySelector('#side .lgplate').nextElementSibling.id === 'sidedept'));
+  check('زر الدخول كمدرب لا يظهر لغير صاحب المنصة', (await p.$$('#who [data-act="as-trainer"]')).length === 0);
   check('أدوات الإدارة مخفية عن المدرب', !(await p.isVisible('#nav a[data-v="users"]')));
   await p.evaluate(() => { location.hash = 'users'; }); await p.waitForTimeout(600);
   check('فتح صفحة الإدارة برابط مباشر يُعاد إلى الرئيسية', await p.evaluate(() => A.view) === 'home');
@@ -209,6 +224,7 @@ const shellUp = (page) => page.waitForFunction(() => typeof A !== 'undefined' &&
   await p.waitForFunction((n) => A.m && A.m.sections.length === n, nsec, { timeout: 15000 });
   check('رئيس القسم يدخل ويرى كل الشعب', await p.evaluate((n) => A.me.role === 'head' && A.m.sections.length === n, nsec));
   const hw = await p.evaluate(async () => { try { await db.doc('marks/63854').update({ m: { 446000002: { d14480501: 'غ' } } }); return 'saved'; } catch (e) { return e.message; } });
+  check('…ولا لرئيس القسم', (await p.$$('#who [data-act="as-trainer"]')).length === 0);
   check('رئيس القسم لا يعدّل التحضير (من الخادم)', hw !== 'saved', hw);
   await c.close();
 

@@ -69,7 +69,7 @@ if (window.HAADER_WEB) (() => {
     Object.assign(u, { mustChange: false, salt: f.salt, iter: f.iter }); A.forceChange = false; closeModal(); toast('تغيّرت كلمة المرور. استخدمها في الدخول القادم.');
   };
   const baseLogout = logout;
-  logout = function () { try { if (A.me) logLogin(A.me.username, true, 'خروج'); } catch (e) { /* */ } A.me = null; W.signOut(); };
+  logout = function () { W.sstore.set('haader.asTrainer', null); try { if (A.me) logLogin(A.me.username, true, 'خروج'); } catch (e) { /* */ } A.me = null; W.signOut(); };
   Object.assign(ACT, {
     logout: () => logout(),
     'web-out': () => W.signOut(),
@@ -110,10 +110,36 @@ if (window.HAADER_WEB) (() => {
     const t = myDept(); if (d.textContent !== t) d.textContent = t;
   }
 
+  /* الدخول بحساب المدرب من حساب المسؤول: لصاحب المنصة وحده (aalkhathami)
+     العرض يصبح عرض مدرب: شعبه فقط، بلا أدوات الإدارة. ويعود إلى المسؤول بضغطة. */
+  const SELF_TRAINER = 'aalkhathami';
+  const canSwitch = () => !!(A.me && A.me.role === 'admin' && String(A.me.username).toLowerCase() === SELF_TRAINER && W.me && W.me.username === SELF_TRAINER);
+  try { A.asTrainer = W.sstore.get('haader.asTrainer') === '1'; } catch (e) { A.asTrainer = false; }
+  function setAsTrainer(on) {
+    A.asTrainer = !!on && canSwitch();
+    W.sstore.set('haader.asTrainer', A.asTrainer ? '1' : null);
+    A.view = 'home'; A.crn = null; A.qrCrn = null;
+    buildNav(); rebuild(); render(true); window.scrollTo(0, 0);
+    toast(A.asTrainer ? 'دخلت بحسابك كمدرب: شعبك فقط، بلا أدوات الإدارة.' : 'عدت إلى حساب مسؤول المنصة.');
+  }
+  const baseBuildNav = buildNav;
+  buildNav = function () {
+    if (A.asTrainer && !canSwitch()) A.asTrainer = false;
+    baseBuildNav();
+    const c = $('#who'); if (!c || !canSwitch()) return;
+    const b = document.createElement('button');
+    b.className = 'wbtn swtr' + (A.asTrainer ? ' on' : ''); b.dataset.act = 'as-trainer';
+    b.textContent = A.asTrainer ? 'العودة لحساب المسؤول' : 'الدخول بحسابي كمدرب';
+    const row = c.querySelector('.row'); (row || c).insertAdjacentElement(row ? 'beforebegin' : 'beforeend', b);
+    if (A.asTrainer) { const sm = c.querySelector('small'); if (sm) sm.textContent = 'مدرب — وضع المدرب لحساب المسؤول'; }
+  };
+  ACT['as-trainer'] = () => setAsTrainer(!A.asTrainer);
+
   /* بعد الدخول: آخر دخول، وطلب تغيير كلمة المرور المؤقتة */
   const baseRender = render;
   render = function (force) {
     baseRender(force);
+    document.body.classList.toggle('astr', !!A.asTrainer);
     deptLine();
     if (A.me && firstMe) {
       firstMe = false;

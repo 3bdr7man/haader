@@ -709,6 +709,9 @@ tr.gds td{border-top:2px solid var(--gl-line,var(--line))}
 .lgdept{margin:6px 2px 2px;text-align:center;font-size:13px;font-weight:700;line-height:1.5;color:inherit;opacity:.95}
 #side .lgdept{color:#EAF4FA}
 .tp-org{display:grid;justify-items:center;gap:0}.tp-head .lgdept{color:#fff;font-size:12.5px;margin-top:4px}
+.wbtn.swtr{display:block;width:100%;margin:6px 0 4px;padding:7px 10px;border-radius:10px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;cursor:pointer}
+.wbtn.swtr.on{background:#F2B544;color:#1B2A3A;border-color:#F2B544}
+body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
 </style>
 <div id="gate" dir="rtl" lang="ar"></div>
 <div id="shell" dir="rtl" lang="ar" hidden>
@@ -717,7 +720,7 @@ tr.gds td{border-top:2px solid var(--gl-line,var(--line))}
 </div>
 <div id="toast" role="status" dir="rtl" hidden></div>
 <div id="tip" dir="rtl" hidden></div>
-<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="d328494c1f6f";</script>
+<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="f1d69e0d23a2";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 /* ====================================================================
@@ -1343,7 +1346,7 @@ function overlay(path, data) { const c = clone(data); Q.forEach((w) => { if (w.p
 /* ---------- تحميل البيانات ---------- */
 function rebuild() {
   const r = A.raw, g = (n) => (r.meta[n] && r.meta[n].rows) || [];
-  const visible = {}; Object.entries(r.sections).forEach(([k, s]) => { if (!A.me || A.me.role === 'admin' || A.me.role === 'viewer' || A.me.role === 'head' || s.trainer === A.me.id) visible[k] = s; });
+  const visible = {}; Object.entries(r.sections).forEach(([k, s]) => { if (!A.me || (A.me.role === 'admin' && !A.asTrainer) || A.me.role === 'viewer' || A.me.role === 'head' || s.trainer === A.me.id) visible[k] = s; });
   A.m = H.build({ sections: visible, marks: r.marks, notes: r.notes, calendar: g('calendar'), settings: r.meta.settings, excuses: g('excuses'), reinstated: g('reinstated') });
   H.sortRows(A.m, A.rowLock);
 }
@@ -1951,7 +1954,7 @@ const NOTICE_DEF = {
 const ORG_DEF = { dept: DEPT, head: '', headEmail: '', specs: ['تقنية الدعم الفني', 'تقنية شبكات الحاسب'], defaultSpec: 'تقنية شبكات الحاسب' };
 const orgInfo = () => Object.assign({}, ORG_DEF, A.raw.meta.org || {});
 const accList = () => Object.values(A.raw.accounts || {}).sort((a, b) => (a.role === b.role ? String(a.name).localeCompare(String(b.name), 'ar') : a.role === 'admin' ? -1 : 1));
-const isAdmin = () => !!(A.me && A.me.role === 'admin');
+const isAdmin = () => !!(A.me && A.me.role === 'admin' && !A.asTrainer);
 const isViewer = () => !!(A.me && A.me.role === 'viewer');
 /* كل تغيير في ربط الشعبة بمدربها يُسجَّل في السجلات */
 const linkAudit = (crn, from, to) => { if ((from || '') === (to || '')) return; const nm = (i) => (i && A.raw.accounts[i] ? A.raw.accounts[i].name : 'غير مرتبطة'); audit([[new Date().toISOString(), crn, '—', 'تغيير مدرب الشعبة', '—', nm(from), nm(to), 'إدارة', A.me ? A.me.name : '']]); };
@@ -6192,7 +6195,7 @@ if (window.HAADER_WEB) (() => {
     Object.assign(u, { mustChange: false, salt: f.salt, iter: f.iter }); A.forceChange = false; closeModal(); toast('تغيّرت كلمة المرور. استخدمها في الدخول القادم.');
   };
   const baseLogout = logout;
-  logout = function () { try { if (A.me) logLogin(A.me.username, true, 'خروج'); } catch (e) { /* */ } A.me = null; W.signOut(); };
+  logout = function () { W.sstore.set('haader.asTrainer', null); try { if (A.me) logLogin(A.me.username, true, 'خروج'); } catch (e) { /* */ } A.me = null; W.signOut(); };
   Object.assign(ACT, {
     logout: () => logout(),
     'web-out': () => W.signOut(),
@@ -6233,10 +6236,36 @@ if (window.HAADER_WEB) (() => {
     const t = myDept(); if (d.textContent !== t) d.textContent = t;
   }
 
+  /* الدخول بحساب المدرب من حساب المسؤول: لصاحب المنصة وحده (aalkhathami)
+     العرض يصبح عرض مدرب: شعبه فقط، بلا أدوات الإدارة. ويعود إلى المسؤول بضغطة. */
+  const SELF_TRAINER = 'aalkhathami';
+  const canSwitch = () => !!(A.me && A.me.role === 'admin' && String(A.me.username).toLowerCase() === SELF_TRAINER && W.me && W.me.username === SELF_TRAINER);
+  try { A.asTrainer = W.sstore.get('haader.asTrainer') === '1'; } catch (e) { A.asTrainer = false; }
+  function setAsTrainer(on) {
+    A.asTrainer = !!on && canSwitch();
+    W.sstore.set('haader.asTrainer', A.asTrainer ? '1' : null);
+    A.view = 'home'; A.crn = null; A.qrCrn = null;
+    buildNav(); rebuild(); render(true); window.scrollTo(0, 0);
+    toast(A.asTrainer ? 'دخلت بحسابك كمدرب: شعبك فقط، بلا أدوات الإدارة.' : 'عدت إلى حساب مسؤول المنصة.');
+  }
+  const baseBuildNav = buildNav;
+  buildNav = function () {
+    if (A.asTrainer && !canSwitch()) A.asTrainer = false;
+    baseBuildNav();
+    const c = $('#who'); if (!c || !canSwitch()) return;
+    const b = document.createElement('button');
+    b.className = 'wbtn swtr' + (A.asTrainer ? ' on' : ''); b.dataset.act = 'as-trainer';
+    b.textContent = A.asTrainer ? 'العودة لحساب المسؤول' : 'الدخول بحسابي كمدرب';
+    const row = c.querySelector('.row'); (row || c).insertAdjacentElement(row ? 'beforebegin' : 'beforeend', b);
+    if (A.asTrainer) { const sm = c.querySelector('small'); if (sm) sm.textContent = 'مدرب — وضع المدرب لحساب المسؤول'; }
+  };
+  ACT['as-trainer'] = () => setAsTrainer(!A.asTrainer);
+
   /* بعد الدخول: آخر دخول، وطلب تغيير كلمة المرور المؤقتة */
   const baseRender = render;
   render = function (force) {
     baseRender(force);
+    document.body.classList.toggle('astr', !!A.asTrainer);
     deptLine();
     if (A.me && firstMe) {
       firstMe = false;

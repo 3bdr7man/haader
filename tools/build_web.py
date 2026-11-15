@@ -43,7 +43,7 @@ rep("const isAdmin = () => !!(A.me && A.me.role === 'admin');", "const isAdmin =
 rep("if (!A.me || A.me.role === 'admin' || A.me.role === 'viewer'", "if (!A.me || (A.me.role === 'admin' && !A.asTrainer) || A.me.role === 'viewer'")
 
 # 3) ربط الدخول وبوابة المتدرب: قبل إقلاع المنصة
-post = web('post.js') + '\n' + web('portal.js')
+post = web('post.js') + '\n' + web('portal.js') + '\n' + web('grades-web.js')
 assert '</script' not in post
 rep('\nboot();\n', '\n' + post + '\nboot();\n')
 

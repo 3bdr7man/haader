@@ -27,7 +27,7 @@ if (window.HAADER_WEB) (() => {
       const qr = W.peekQr();
       inner = `<h2>تسجيل الدخول</h2><p class="sub">${qr ? 'سجّل دخولك برقمك التدريبي ليُسجَّل حضورك في المحاضرة.' : 'المدرب ورئيس القسم باسم المستخدم، والمتدرب برقمه التدريبي.'}</p>
       <form data-submit="login" class="stack" novalidate><label>اسم المستخدم أو الرقم التدريبي<input type="text" id="liU" required dir="ltr" autocomplete="username" autocapitalize="none" spellcheck="false" inputmode="text"></label>
-      <label>كلمة المرور<span class="pwrow"><input type="password" id="liP" required dir="ltr" autocomplete="current-password"><button type="button" class="pweye" data-act="pw-eye" aria-label="إظهار كلمة المرور">إظهار</button></span></label>
+      <label>كلمة المرور<input type="password" id="liP" required dir="ltr" autocomplete="current-password"></label>
       <div id="liE" class="err" role="alert" ${flash ? '' : 'hidden'}>${esc(flash)}</div>
       <button class="btn p" id="liB" type="submit">دخول</button></form>
       <p class="sub gatehelp">نسيت كلمة المرور؟ المتدرب يراجع مدرب المقرر، والمدرب يراجع مسؤول المنصة لإعادة إصدارها.</p>`;
@@ -72,15 +72,49 @@ if (window.HAADER_WEB) (() => {
   logout = function () { try { if (A.me) logLogin(A.me.username, true, 'خروج'); } catch (e) { /* */ } A.me = null; W.signOut(); };
   Object.assign(ACT, {
     logout: () => logout(),
-    'pw-eye': (el) => { const i = $('#liP'); if (!i) return; const show = i.type === 'password'; i.type = show ? 'text' : 'password'; el.textContent = show ? 'إخفاء' : 'إظهار'; el.setAttribute('aria-label', show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'); },
     'web-out': () => W.signOut(),
     'web-reload': () => location.reload(),
   });
+
+  /* إظهار كلمة المرور وإخفاؤها: زر بأيقونة عين في كل خانة كلمة مرور (الدخول، وتغييرها، وبوابة المتدرب) */
+  const EYE_ON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 4.5 12 4.5 22.5 12 22.5 12 18.5 19.5 12 19.5 1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3.2"/></svg>';
+  const EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 4.5 12 4.5 22.5 12 22.5 12 18.5 19.5 12 19.5 1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3.2"/><path d="M3 3l18 18"/></svg>';
+  function eyeify(root) {
+    (root.querySelectorAll ? root : document).querySelectorAll('input[type=password]:not([data-eye])').forEach((i) => {
+      i.dataset.eye = '1';
+      const w = document.createElement('span'); w.className = 'pwwrap';
+      i.parentNode.insertBefore(w, i); w.appendChild(i);
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pweye';
+      b.setAttribute('aria-label', 'إظهار كلمة المرور'); b.title = 'إظهار كلمة المرور'; b.setAttribute('aria-pressed', 'false'); b.innerHTML = EYE_ON;
+      w.appendChild(b);
+    });
+  }
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest && ev.target.closest('.pweye'); if (!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const i = b.parentNode.querySelector('input'); if (!i) return;
+    const show = i.type === 'password'; i.type = show ? 'text' : 'password';
+    const t = show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور';
+    b.setAttribute('aria-label', t); b.title = t; b.setAttribute('aria-pressed', String(show)); b.innerHTML = show ? EYE_OFF : EYE_ON;
+    i.focus(); try { const n = i.value.length; i.setSelectionRange(n, n); } catch (e) { /* */ }
+  }, true);
+  new MutationObserver((ms) => { if (ms.some((m) => m.addedNodes.length)) eyeify(document); }).observe(document.documentElement, { childList: true, subtree: true });
+  eyeify(document);
+
+  /* اسم قسم المستخدم تحت شعار المؤسسة العامة للتدريب التقني والمهني */
+  const myDept = () => (A.me && A.me.dept) || orgInfo().dept || DEPT;
+  function deptLine() {
+    const plate = $('#side .lgplate'); if (!plate || !A.me) return;
+    let d = $('#sidedept');
+    if (!d) { d = document.createElement('div'); d.id = 'sidedept'; d.className = 'lgdept'; plate.insertAdjacentElement('afterend', d); }
+    const t = myDept(); if (d.textContent !== t) d.textContent = t;
+  }
 
   /* بعد الدخول: آخر دخول، وطلب تغيير كلمة المرور المؤقتة */
   const baseRender = render;
   render = function (force) {
     baseRender(force);
+    deptLine();
     if (A.me && firstMe) {
       firstMe = false;
       enqueue('accounts/' + A.me.id, { lastLogin: new Date().toISOString() });

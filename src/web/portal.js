@@ -79,7 +79,8 @@ if (window.HAADER_WEB) (() => {
       else if (r.st.absent && r.warn - r.st.absent <= 1) alerts.push(['warn', `اقتربت من الإنذار في «${r.sec.course}»: يبقى غياب واحد.`]);
     });
     ((P.data && P.data.warn) || []).forEach((w) => alerts.push(['info', `أُرسل إليك ${w.type === 'dep' ? 'إشعار حرمان' : w.type === 'warn' ? 'إنذار' : 'تنبيه'} في «${w.course || w.crn}» بتاريخ ${String(w.at || '').slice(0, 10)}.`]));
-    root.innerHTML = `<header class="tp-head"><div class="lgplate"><img src="${LOGO}" alt="${LOGO_ALT}"></div><div class="tp-who"><b>${esc(name)}</b><small>الرقم التدريبي ${esc((P.data && P.data.id) || (P.me && P.me.id) || '')}</small></div><div class="tp-act"><button class="btn" data-tp="pw">كلمة المرور</button><button class="btn" data-tp="out">خروج</button></div></header>
+    const dept = ((P.m && P.m.sections.find((x) => x.dept)) || {}).dept || DEPT;
+    root.innerHTML = `<header class="tp-head"><div class="tp-org"><div class="lgplate"><img src="${LOGO}" alt="${LOGO_ALT}"></div><div class="lgdept">${esc(dept)}</div></div><div class="tp-who"><b>${esc(name)}</b><small>الرقم التدريبي ${esc((P.data && P.data.id) || (P.me && P.me.id) || '')}</small></div><div class="tp-act"><button class="btn" data-tp="pw">كلمة المرور</button><button class="btn" data-tp="out">خروج</button></div></header>
     <main class="tp-main">
       ${qrCard()}
       ${P.busy ? '<section class="tp-card"><h2>جارٍ تحميل بياناتك…</h2><div class="gspin"></div></section>' : ''}

@@ -664,8 +664,10 @@ tr.gds td{border-top:2px solid var(--gl-line,var(--line))}
 @media (max-width:620px){.gstages{grid-template-columns:repeat(2,minmax(0,1fr))}.gin{width:56px}.gtab td.gnm{min-width:150px}.gnotices li{flex-direction:column;align-items:stretch}}
 
 /* ===== نسخة الويب: الدخول وبوابة المتدرب ===== */
-.pwrow{display:flex;gap:6px;align-items:stretch}.pwrow input{flex:1;min-width:0}
-.pweye{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.1);color:inherit;border-radius:10px;padding:0 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.pwwrap{position:relative;display:block}.pwwrap input{width:100%;box-sizing:border-box;padding-left:46px!important}
+.pweye{position:absolute;left:4px;top:50%;transform:translateY(-50%);width:36px;height:36px;display:grid;place-items:center;border:0;background:transparent;color:inherit;opacity:.75;border-radius:8px;cursor:pointer;padding:0}
+.pweye:hover,.pweye:focus-visible{opacity:1;background:rgba(127,127,127,.16)}.pweye:focus-visible{outline:2px solid currentColor;outline-offset:1px}
+.pweye svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .gatehelp{font-size:12px;opacity:.85;margin:4px 0 0}
 #gate .btn:disabled{opacity:.65;cursor:progress}
 .gspin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(127,127,127,.25);border-top-color:var(--pri,#0066CC);animation:gsp 0.9s linear infinite;margin:6px auto}
@@ -704,6 +706,9 @@ tr.gds td{border-top:2px solid var(--gl-line,var(--line))}
 .tp-modal input{padding:10px 12px;border:1px solid var(--line,#D5DEE9);border-radius:10px;font:inherit}
 .tp-modal .err{color:var(--bad,#B3261E);font-size:13px}
 @media (max-width:620px){.tp-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.tp-kpi div:last-child{grid-column:span 2}.tp-head{padding:10px 12px}}
+.lgdept{margin:6px 2px 2px;text-align:center;font-size:13px;font-weight:700;line-height:1.5;color:inherit;opacity:.95}
+#side .lgdept{color:#EAF4FA}
+.tp-org{display:grid;justify-items:center;gap:0}.tp-head .lgdept{color:#fff;font-size:12.5px;margin-top:4px}
 </style>
 <div id="gate" dir="rtl" lang="ar"></div>
 <div id="shell" dir="rtl" lang="ar" hidden>
@@ -712,7 +717,7 @@ tr.gds td{border-top:2px solid var(--gl-line,var(--line))}
 </div>
 <div id="toast" role="status" dir="rtl" hidden></div>
 <div id="tip" dir="rtl" hidden></div>
-<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="06705e4b5284";</script>
+<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="d328494c1f6f";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 /* ====================================================================
@@ -6145,7 +6150,7 @@ if (window.HAADER_WEB) (() => {
       const qr = W.peekQr();
       inner = `<h2>تسجيل الدخول</h2><p class="sub">${qr ? 'سجّل دخولك برقمك التدريبي ليُسجَّل حضورك في المحاضرة.' : 'المدرب ورئيس القسم باسم المستخدم، والمتدرب برقمه التدريبي.'}</p>
       <form data-submit="login" class="stack" novalidate><label>اسم المستخدم أو الرقم التدريبي<input type="text" id="liU" required dir="ltr" autocomplete="username" autocapitalize="none" spellcheck="false" inputmode="text"></label>
-      <label>كلمة المرور<span class="pwrow"><input type="password" id="liP" required dir="ltr" autocomplete="current-password"><button type="button" class="pweye" data-act="pw-eye" aria-label="إظهار كلمة المرور">إظهار</button></span></label>
+      <label>كلمة المرور<input type="password" id="liP" required dir="ltr" autocomplete="current-password"></label>
       <div id="liE" class="err" role="alert" ${flash ? '' : 'hidden'}>${esc(flash)}</div>
       <button class="btn p" id="liB" type="submit">دخول</button></form>
       <p class="sub gatehelp">نسيت كلمة المرور؟ المتدرب يراجع مدرب المقرر، والمدرب يراجع مسؤول المنصة لإعادة إصدارها.</p>`;
@@ -6190,15 +6195,49 @@ if (window.HAADER_WEB) (() => {
   logout = function () { try { if (A.me) logLogin(A.me.username, true, 'خروج'); } catch (e) { /* */ } A.me = null; W.signOut(); };
   Object.assign(ACT, {
     logout: () => logout(),
-    'pw-eye': (el) => { const i = $('#liP'); if (!i) return; const show = i.type === 'password'; i.type = show ? 'text' : 'password'; el.textContent = show ? 'إخفاء' : 'إظهار'; el.setAttribute('aria-label', show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'); },
     'web-out': () => W.signOut(),
     'web-reload': () => location.reload(),
   });
+
+  /* إظهار كلمة المرور وإخفاؤها: زر بأيقونة عين في كل خانة كلمة مرور (الدخول، وتغييرها، وبوابة المتدرب) */
+  const EYE_ON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 4.5 12 4.5 22.5 12 22.5 12 18.5 19.5 12 19.5 1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3.2"/></svg>';
+  const EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 4.5 12 4.5 22.5 12 22.5 12 18.5 19.5 12 19.5 1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3.2"/><path d="M3 3l18 18"/></svg>';
+  function eyeify(root) {
+    (root.querySelectorAll ? root : document).querySelectorAll('input[type=password]:not([data-eye])').forEach((i) => {
+      i.dataset.eye = '1';
+      const w = document.createElement('span'); w.className = 'pwwrap';
+      i.parentNode.insertBefore(w, i); w.appendChild(i);
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pweye';
+      b.setAttribute('aria-label', 'إظهار كلمة المرور'); b.title = 'إظهار كلمة المرور'; b.setAttribute('aria-pressed', 'false'); b.innerHTML = EYE_ON;
+      w.appendChild(b);
+    });
+  }
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest && ev.target.closest('.pweye'); if (!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const i = b.parentNode.querySelector('input'); if (!i) return;
+    const show = i.type === 'password'; i.type = show ? 'text' : 'password';
+    const t = show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور';
+    b.setAttribute('aria-label', t); b.title = t; b.setAttribute('aria-pressed', String(show)); b.innerHTML = show ? EYE_OFF : EYE_ON;
+    i.focus(); try { const n = i.value.length; i.setSelectionRange(n, n); } catch (e) { /* */ }
+  }, true);
+  new MutationObserver((ms) => { if (ms.some((m) => m.addedNodes.length)) eyeify(document); }).observe(document.documentElement, { childList: true, subtree: true });
+  eyeify(document);
+
+  /* اسم قسم المستخدم تحت شعار المؤسسة العامة للتدريب التقني والمهني */
+  const myDept = () => (A.me && A.me.dept) || orgInfo().dept || DEPT;
+  function deptLine() {
+    const plate = $('#side .lgplate'); if (!plate || !A.me) return;
+    let d = $('#sidedept');
+    if (!d) { d = document.createElement('div'); d.id = 'sidedept'; d.className = 'lgdept'; plate.insertAdjacentElement('afterend', d); }
+    const t = myDept(); if (d.textContent !== t) d.textContent = t;
+  }
 
   /* بعد الدخول: آخر دخول، وطلب تغيير كلمة المرور المؤقتة */
   const baseRender = render;
   render = function (force) {
     baseRender(force);
+    deptLine();
     if (A.me && firstMe) {
       firstMe = false;
       enqueue('accounts/' + A.me.id, { lastLogin: new Date().toISOString() });
@@ -6336,7 +6375,8 @@ if (window.HAADER_WEB) (() => {
       else if (r.st.absent && r.warn - r.st.absent <= 1) alerts.push(['warn', `اقتربت من الإنذار في «${r.sec.course}»: يبقى غياب واحد.`]);
     });
     ((P.data && P.data.warn) || []).forEach((w) => alerts.push(['info', `أُرسل إليك ${w.type === 'dep' ? 'إشعار حرمان' : w.type === 'warn' ? 'إنذار' : 'تنبيه'} في «${w.course || w.crn}» بتاريخ ${String(w.at || '').slice(0, 10)}.`]));
-    root.innerHTML = `<header class="tp-head"><div class="lgplate"><img src="${LOGO}" alt="${LOGO_ALT}"></div><div class="tp-who"><b>${esc(name)}</b><small>الرقم التدريبي ${esc((P.data && P.data.id) || (P.me && P.me.id) || '')}</small></div><div class="tp-act"><button class="btn" data-tp="pw">كلمة المرور</button><button class="btn" data-tp="out">خروج</button></div></header>
+    const dept = ((P.m && P.m.sections.find((x) => x.dept)) || {}).dept || DEPT;
+    root.innerHTML = `<header class="tp-head"><div class="tp-org"><div class="lgplate"><img src="${LOGO}" alt="${LOGO_ALT}"></div><div class="lgdept">${esc(dept)}</div></div><div class="tp-who"><b>${esc(name)}</b><small>الرقم التدريبي ${esc((P.data && P.data.id) || (P.me && P.me.id) || '')}</small></div><div class="tp-act"><button class="btn" data-tp="pw">كلمة المرور</button><button class="btn" data-tp="out">خروج</button></div></header>
     <main class="tp-main">
       ${qrCard()}
       ${P.busy ? '<section class="tp-card"><h2>جارٍ تحميل بياناتك…</h2><div class="gspin"></div></section>' : ''}

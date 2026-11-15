@@ -67,6 +67,12 @@ const shellUp = (page) => page.waitForFunction(() => typeof A !== 'undefined' &&
   await p.goto(URL0); await p.waitForSelector('#liU');
   check('شاشة دخول واحدة: اسم المستخدم وكلمة المرور', await p.isVisible('#liU') && await p.isVisible('#liP') && (await p.$$('input[type=email]')).length === 0);
   await p.screenshot({ path: OUT + '/login.png' });
+  await p.fill('#liP', 'Secret-123');
+  await p.click('#gate .pweye');
+  check('زر العين يُظهر كلمة المرور', await p.getAttribute('#liP', 'type') === 'text' && await p.getAttribute('#gate .pweye', 'aria-pressed') === 'true');
+  await p.screenshot({ path: OUT + '/login-eye.png' });
+  await p.click('#gate .pweye');
+  check('…ويخفيها مرة أخرى', await p.getAttribute('#liP', 'type') === 'password' && await p.inputValue('#liP') === 'Secret-123');
   await loginUI(p, 't.ahmed', 'wrong-pass');
   await p.waitForFunction(() => { const e = document.querySelector('#liE'); return e && !e.hidden && e.textContent.length > 3; });
   check('كلمة مرور خاطئة: رسالة واضحة', (await p.textContent('#liE')).includes('اسم المستخدم أو كلمة المرور غير صحيحة'), await p.textContent('#liE'));
@@ -122,6 +128,7 @@ const shellUp = (page) => page.waitForFunction(() => typeof A !== 'undefined' &&
   await loginUI(p, 't.fahad', 'Fahad-temp-77'); await shellUp(p);
   await p.waitForSelector('#modal', { timeout: 8000 }).catch(() => {});
   check('المدرب الجديد يدخل، ويُطلب منه تغيير كلمة المرور المؤقتة', await p.evaluate(() => !!document.querySelector('#modal') && A.forceChange === true));
+  check('زر العين في نافذة تغيير كلمة المرور', (await p.$$('#modal .pweye')).length === 2);
   await p.fill('#cpN', 'Fahad-own-pass1'); await p.fill('#cpR', 'Fahad-own-pass1');
   await p.click('#modal form[data-submit="changePw"] .btn.p'); await p.waitForTimeout(2500);
   const lp = await L.login('t.fahad', 'Fahad-own-pass1');
@@ -132,6 +139,7 @@ const shellUp = (page) => page.waitForFunction(() => typeof A !== 'undefined' &&
   await loginUI(p, 't.ahmed', PW.t1); await shellUp(p);
   await p.waitForFunction(() => A.m && A.m.sections.length >= 1, null, { timeout: 15000 });
   check('المدرب يرى شعبته وحدها', await p.evaluate(() => A.m.sections.map((s) => s.crn).join()) === '63854');
+  check('اسم قسم المدرب تحت شعار المؤسسة', (await p.textContent('#sidedept')) === 'قسم الحاسب وتقنية المعلومات' && await p.evaluate(() => document.querySelector('#side .lgplate').nextElementSibling.id === 'sidedept'));
   check('أدوات الإدارة مخفية عن المدرب', !(await p.isVisible('#nav a[data-v="users"]')));
   await p.evaluate(() => { location.hash = 'users'; }); await p.waitForTimeout(600);
   check('فتح صفحة الإدارة برابط مباشر يُعاد إلى الرئيسية', await p.evaluate(() => A.view) === 'home');
@@ -167,11 +175,13 @@ const shellUp = (page) => page.waitForFunction(() => typeof A !== 'undefined' &&
   check('…بحالته وفق قاعدة التأخير (الجلسة فُتحت بعد بداية المحاضرة فالسماح من فتحها)', /حاضر/.test(qrText), qrText);
   await m.waitForSelector('.tp-modal', { timeout: 8000 }).catch(() => {});
   check('كلمة المرور المؤقتة: يُطلب تغييرها', await m.isVisible('.tp-modal'));
+  check('زر العين في بوابة المتدرب', (await m.$$('.tp-modal .pweye')).length === 2);
   await m.fill('#tpN', 'MyOwnPass-55'); await m.fill('#tpR', 'MyOwnPass-55'); await m.click('.tp-modal button[type=submit]');
   await m.waitForSelector('.tp-modal', { state: 'detached', timeout: 8000 }).catch(() => {});
   check('…ويُحفظ التغيير', (await L.login('446000001', 'MyOwnPass-55')).ok);
   await m.waitForSelector('.tp-course', { timeout: 15000 });
   const card = await m.textContent('.tp-course');
+  check('اسم القسم تحت الشعار في بوابة المتدرب', (await m.textContent('.tp-head .lgdept')) === 'قسم الحاسب وتقنية المعلومات');
   check('بوابة المتدرب: مقرره وشعبته', card.includes('التوجيه والتحويل 1') && card.includes('63854'));
   check('…وغيابه المحتسب ونسبته', card.includes('غياب محتسب') && card.includes('نسبة الغياب'));
   check('…وحالة الإنذار', /إنذار|قريب من/.test(card), card.slice(0, 200));

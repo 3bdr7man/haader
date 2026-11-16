@@ -5,13 +5,43 @@ const ok = (c, n, x) => { if (c) { pass++; console.log('  ✓ ' + n); } else { f
 (async () => {
   const b = await L.launch();
   const docs = L.seed(); docs['accounts/uadmin'].username = 'aalkhathami';
+  // درجاتي: شعبة رصد تجريبية لأول متدرب في أول شعبة
+  const tid0 = Object.keys(docs).filter((k) => k.startsWith('sections/')).map((k) => docs[k]).sort((a, c) => (a.order || 0) - (c.order || 0))[0].rows[0].id;
+  const its = [{ n: 'الواجبات', max: 6 }, { n: 'المشاركة', max: 4 }, { n: 'الشهري 1', max: 10 }, { n: 'الشهري 2', max: 10 }];
+  docs['gsec/99001'] = { crn: '99001', code: 'شبكا 121', name: 'مقرر رصد تجريبي', term: 'الفصل التدريبي الأول 1448هـ', termCode: '144710', exam: {}, flow: {}, comps: [{ k: 'LAB1', max: 30, part: 'عملي' }, { k: 'LAB2', max: 20, part: 'عملي' }, { k: 'LEC1', max: 30, part: 'نظري' }, { k: 'LEC2', max: 20, part: 'نظري' }], items: { LEC1: its, LAB1: its }, rows: [{ id: tid0, name: 'متدرب', el: true, st: 'مسجل' }, { id: '999999990', name: 'غيره', el: true, st: 'مسجل' }] };
+  docs['gmarks/99001'] = { g: { [tid0]: { LEC1: 25, LEC2: 15, LAB1: 28, LAB2: 18 }, '999999990': { LEC1: 30 } }, s: { [tid0]: { LEC1: { 'الواجبات': 5, 'المشاركة': 4, 'الشهري 1': 8, 'الشهري 2': 8 } } }, t: {} };
+  docs['meta/timeline'] = require('../data/timeline-1448-2.json');
   const p = await L.open(b, 'admin', docs);
+  const tlv = async (pg) => pg.evaluate(() => { const b = document.getElementById('tlBar'); const e = HAADER_TL.picks(A.raw.meta.timeline); return b ? { first: document.getElementById('main').firstElementChild === b, n: b.querySelectorAll('.tll li').length, want: e.now.length + e.soon.length } : null; });
+  let tv = await tlv(p);
+  ok(tv && tv.first && tv.n === tv.want && tv.n >= 1, 'الخط الزمني: تنبيه أعلى المنصة لحساب المسؤول', tv);
+  await p.click('#tlBar [data-tl="all"]');
+  ok(await p.evaluate(() => { const o = document.querySelector('.tl-ov'); return !!o && o.querySelectorAll('tbody tr:not(.tlg)').length === 30; }), 'الخط الزمني كاملاً (30 مهمة)');
+  await p.click('.tl-ov [data-tl="close"]');
   ok(await p.evaluate(() => (document.getElementById('sidedept') || {}).textContent === 'قسم الحاسب وتقنية المعلومات'), 'اسم القسم تحت شعار المؤسسة');
   ok(await p.evaluate(() => !!document.querySelector('#who [data-act="as-trainer"]')), 'زر «الدخول بحسابي كمدرب» لصاحب المنصة');
   await p.click('#who [data-act="as-trainer"]');
   ok(await p.evaluate(() => A.asTrainer === true && !isAdmin() && document.body.classList.contains('astr')), 'وضع المدرب يُخفي صلاحيات الإدارة');
   await p.click('#who [data-act="as-trainer"]');
   ok(await p.evaluate(() => A.asTrainer === false && isAdmin()), 'العودة لحساب المسؤول');
+  // معاينة بوابة المتدرب
+  ok(await p.evaluate(() => !!document.querySelector('#who [data-act="tp-preview"]')), 'زر «معاينة بوابة المتدرب» للمسؤول');
+  await p.click('#who [data-act="tp-preview"]');
+  const tid = await p.evaluate(() => A.m.sections[0].rows[0].id);
+  await p.fill('#tpvQ', tid);
+  ok(await p.evaluate(() => document.querySelectorAll('#tpvL [data-act="tp-preview-go"]').length === 1), 'البحث بالرقم التدريبي');
+  await p.click('#tpvL [data-act="tp-preview-go"]');
+  await p.waitForSelector('#tportal .tp-course', { timeout: 10000 });
+  const pv = await p.evaluate((t) => { const P = HAADER_PORTAL.P; const mine = P.m.sections.map((s) => { const x = H.stat(P.m, s, s.rows[0]); return [s.crn, x.absent, x.pres]; }); const full = A.m.sections.filter((s) => s.rows.some((r) => r.id === t)).map((s) => { const x = H.stat(A.m, s, s.rows.find((r) => r.id === t)); return [s.crn, x.absent, x.pres]; }); return { shell: document.getElementById('shell').hidden, banner: !!document.querySelector('.tp-pv'), out: !!document.querySelector('#tportal [data-tp="out"]'), mine: JSON.stringify(mine.sort()), full: JSON.stringify(full.sort()), cards: document.querySelectorAll('#tportal .tp-course').length }; }, tid);
+  ok(pv.shell && pv.banner && !pv.out && pv.cards >= 1, 'البوابة تظهر بشريط المعاينة ودون أزرار الخروج وكلمة المرور', pv);
+  ok(pv.mine === pv.full, 'أرقام المعاينة مطابقة لما في المنصة (الحضور والغياب)', pv);
+  ok(await p.evaluate(() => { const b = document.getElementById('tlBarTp'); return !!b && b.querySelectorAll('.tll li').length >= 1; }), 'الخط الزمني في بوابة المتدرب');
+  const gr = await p.evaluate(() => { const c = [...document.querySelectorAll('#tportal .tp-grades')].find((x) => /مقرر رصد تجريبي/.test(x.innerText)); if (!c) return null; const row = (lab) => { const tr = [...c.querySelectorAll('tr')].find((r) => r.querySelector('th') && r.querySelector('th').innerText.trim() === lab); return tr ? [...tr.querySelectorAll('td')].map((td) => td.innerText.replace(/\s+/g, ' ').trim()) : null; }; return { t1: row('الاختبار الأول'), t2: row('الاختبار الثاني'), work: row('مجموع أعمال السنة'), fin: row('الاختبار النهائي'), chip: c.querySelector('.chip').innerText, other: c.innerText.includes('999999990') }; });
+  ok(gr && gr.t1[0] === '8 / 10' && gr.t2[0] === '8 / 10' && gr.work.join('|') === '25 / 30|28 / 30' && gr.fin.join('|') === '15 / 20|18 / 20', 'درجاتي: الأول والثاني وأعمال السنة والنهائي (نظري وعملي)', gr);
+  ok(gr && /86 من 100/.test(gr.chip) && !gr.other, 'درجاتي: المجموع 86 من 100، ولا تظهر درجات غيره', gr);
+  await p.screenshot({ path: __dirname + '/out/artifact-preview.png', fullPage: true });
+  await p.click('[data-tp="pv-end"]');
+  ok(await p.evaluate(() => !document.getElementById('shell').hidden && !document.getElementById('tportal')), 'العودة إلى المنصة');
   await p.evaluate(() => ACT['change-pw'] ? ACT['change-pw']() : null); await p.waitForTimeout(200);
   ok(await p.evaluate(() => document.querySelectorAll('#modal .pweye').length >= 2), 'عين كلمة المرور في نافذة تغيير كلمة المرور');
   await p.evaluate(() => closeModal());
@@ -24,7 +54,11 @@ const ok = (c, n, x) => { if (c) { pass++; console.log('  ✓ ' + n); } else { f
   await p.click('#gate .pweye');
   ok(await p.evaluate(() => document.querySelector('#gate .pwwrap input').type === 'password'), 'والضغط ثانية يخفيها');
   await p.screenshot({ path: __dirname + '/out/artifact-gate-eye.png' });
-  ok(!p.errs.length, 'لا أخطاء JavaScript', p.errs.slice(0, 4));
+  const d2 = L.seed(); d2['meta/timeline'] = require('../data/timeline-1448-2.json');
+  const p2 = await L.open(b, 't1', d2);
+  ok(await p2.evaluate(() => !document.querySelector('#who [data-act="tp-preview"]')), 'المدرب لا يرى زر المعاينة');
+  tv = await tlv(p2); ok(tv && tv.first && tv.n === tv.want, 'الخط الزمني: تنبيه في حساب المدرب', tv);
+  ok(!p.errs.length && !p2.errs.length, 'لا أخطاء JavaScript', p.errs.concat(p2.errs).slice(0, 4));
   await b.close();
   console.log(`\n══ الطبقة المشتركة في نسخة Claude: ${pass} ناجح، ${fail} فاشل ══`); process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error('FATAL', e); process.exit(1); });

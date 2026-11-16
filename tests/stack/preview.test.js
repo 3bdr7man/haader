@@ -1,0 +1,83 @@
+// معاينة بوابة المتدرب من حساب المسؤول (نسخة الويب). يُشغَّل بعد e2e.test.js (بياناته وحساباته).
+const { chromium } = require('playwright');
+const L = require('./lib');
+const { sql, check } = L;
+const URL0 = 'http://127.0.0.1:8080/haader/?sb=' + encodeURIComponent(L.BASE);
+(async () => {
+  const tid = sql(`select r->>'id' from doc s, jsonb_array_elements(s.data->'rows') r where s.col='sections' order by 1 limit 1`);
+  const a = await L.login('aalkhathami', 'Admin#2026x'), t = await L.login('t.ahmed', 'Trainer1-pass');
+  check('دخول المسؤول والمدرب', a.ok && t.ok);
+  const ra = await L.rpc('trainee_preview', { p_id: tid }, a.token), rt = await L.rpc('trainee_preview', { p_id: tid }, t.token), rn = await L.rpc('trainee_preview', { p_id: tid });
+  check('الخادم: المسؤول يحصل على بيانات بوابة المتدرب', ra.ok && ra.body.id === tid && Object.keys(ra.body.sections).length >= 1, ra.status);
+  check('الخادم: المدرب ومن لم يسجل الدخول لا يصلون إليها', !rt.ok && !rn.ok, [rt.status, rn.status]);
+  check('الخادم: كل معاينة مسجلة في سجل التدقيق', +sql(`select count(*) from audit where act='trainee_preview' and trainee_id='${tid}'`) >= 1);
+  const tm = sql(`select count(*) from pg_proc where proname in ('trainee_me','trainee_data','trainee_preview')`);
+  check('trainee_me ما زالت كما هي للمتدرب (دالة البيانات المشتركة)', tm === '3');
+  // درجاتي: شعبة رصد تجريبية بتوزيع التوجيه والتحويل (بنود أعمال السنة + النهائي، نظري وعملي)
+  const its = [{ n: 'الواجبات', max: 6 }, { n: 'المشاركة', max: 4 }, { n: 'الشهري 1', max: 10 }, { n: 'الشهري 2', max: 10 }];
+  const gsec = { crn: '99001', code: 'شبكا 121', name: 'مقرر رصد تجريبي', term: 'الفصل التدريبي الأول 1448هـ', pair: '99002', exam: { date: '1448/06/20', time: '08:00', place: 'معمل 3' },
+    comps: [{ k: 'LAB1', max: 30, part: 'عملي', desc: 'أعمال فصلية' }, { k: 'LAB2', max: 20, part: 'عملي', desc: 'نهائي' }, { k: 'LEC1', max: 30, part: 'نظري', desc: 'أعمال فصلية' }, { k: 'LEC2', max: 20, part: 'نظري', desc: 'نهائي' }],
+    items: { LEC1: its, LAB1: its }, rows: [{ id: tid, name: 'متدرب', el: true, st: 'مسجل' }, { id: '999999990', name: 'غيره', el: true, st: 'مسجل' }] };
+  const gm = { g: { [tid]: { LEC1: 25, LEC2: 15 }, '999999990': { LEC1: 30, LEC2: 20 } }, s: { [tid]: { LEC1: { 'الواجبات': 5, 'المشاركة': 4, 'الشهري 1': 8, 'الشهري 2': 8 }, LAB1: { 'الواجبات': 6, 'الشهري 1': 9 } } }, t: {} };
+  const q = (o) => JSON.stringify(o).replace(/'/g, "''");
+  sql(`select set_config('haader.sys','1',false); delete from doc where col in ('gsec','gmarks') and id='99001'; insert into doc(col,id,data) values ('gsec','99001','${q(gsec)}'::jsonb),('gmarks','99001','${q(gm)}'::jsonb);`);
+  const rg = (await L.rpc('trainee_preview', { p_id: tid }, a.token)).body.grades || {};
+  check('الخادم: درجات المتدرب وتوزيعها في بيانات البوابة', rg['99001'] && rg['99001'].g.LEC1 === 25 && rg['99001'].s.LEC1['الشهري 2'] === 8 && rg['99001'].comps.length === 4, rg['99001']);
+  check('الخادم: لا تصل درجات غيره ولا قائمة الشعبة', !JSON.stringify(rg).includes('999999990') && !rg['99001'].rows, Object.keys(rg['99001'] || {}));
+  // الخط الزمني لأعمال الفصل التدريبي (meta/timeline)
+  const TLD = require('../../data/timeline-1448-2.json');
+  sql(`select set_config('haader.sys','1',false); insert into doc(col,id,data) values ('meta','timeline','${q(TLD)}'::jsonb) on conflict (col,id) do update set data=excluded.data;`);
+  const rtl = (await L.rpc('trainee_preview', { p_id: tid }, a.token)).body.meta || {};
+  check('الخادم: الخط الزمني يصل إلى بوابة المتدرب', rtl.timeline && rtl.timeline.tl.length === 30, rtl.timeline && rtl.timeline.tl.length);
+  const b = await chromium.launch(), errs = [];
+  const c = await b.newContext({ timezoneId: 'Asia/Riyadh', locale: 'ar-SA', viewport: { width: 1366, height: 860 } }), p = await c.newPage();
+  p.on('pageerror', (e) => errs.push(String(e).slice(0, 200)));
+  await p.goto(URL0); await p.waitForSelector('#liU'); await p.fill('#liU', 'aalkhathami'); await p.fill('#liP', 'Admin#2026x'); await p.click('#liB');
+  await p.waitForFunction(() => typeof A !== 'undefined' && A.me && A.fresh, null, { timeout: 30000 });
+  const tlv = async (pg) => pg.evaluate(() => { const b = document.getElementById('tlBar'); const exp = HAADER_TL.picks(A.raw.meta.timeline); return b ? { first: document.getElementById('main').firstElementChild === b, n: b.querySelectorAll('.tll li').length, want: exp.now.length + exp.soon.length, title: /الفصل التدريبي الثاني/.test(b.innerText) } : null; });
+  let tv = await tlv(p);
+  check('الخط الزمني: تنبيه أعلى الرئيسية في حساب المسؤول بما يجري وما يقترب', tv && tv.first && tv.title && tv.n === tv.want && tv.n >= 1, tv);
+  const crn1 = await p.evaluate(() => A.m.sections[0].crn);
+  await p.evaluate((c) => { A.crn = c; go('roll'); }, crn1); await p.waitForTimeout(300);
+  tv = await tlv(p); check('الخط الزمني: يظهر أيضاً في واجهة الشعبة', tv && tv.first, tv);
+  await p.click('#tlBar [data-tl="all"]');
+  const tm2 = await p.evaluate(() => { const o = document.querySelector('.tl-ov'); return o ? { rows: o.querySelectorAll('tbody tr:not(.tlg)').length, groups: o.querySelectorAll('tr.tlg').length, chk: /1448-04-09/.test(o.innerText), wide: document.documentElement.scrollWidth - document.documentElement.clientWidth } : null; });
+  check('الخط الزمني كاملاً: 30 مهمة في 4 مجموعات', tm2 && tm2.rows === 30 && tm2.groups === 4 && tm2.chk && tm2.wide <= 1, tm2);
+  await p.screenshot({ path: '/tmp/claude-0/-home-claude/da2fea53-9caa-5476-bb95-529d935e4850/scratchpad/web-timeline.png' });
+  await p.keyboard.press('Escape');
+  check('Esc يغلق نافذة الخط الزمني', await p.evaluate(() => !document.querySelector('.tl-ov')));
+  await p.click('#tlBar [data-tl="min"]');
+  check('تصغير التنبيه يبقيه سطراً واحداً بزر «إظهار»', await p.evaluate(() => { const b = document.getElementById('tlBar'); return b.classList.contains('min') && !b.querySelector('.tll') && !!b.querySelector('[data-tl="max"]'); }));
+  await p.click('#tlBar [data-tl="max"]');
+  check('إظهار التنبيه من جديد', await p.evaluate(() => !!document.querySelector('#tlBar .tll')));
+  await p.evaluate(() => go('home')); await p.waitForTimeout(200);
+  await p.click('#who [data-act="tp-preview"]'); await p.fill('#tpvQ', tid);
+  await p.click('#tpvL [data-act="tp-preview-go"]');
+  await p.waitForSelector('#tportal .tp-course', { timeout: 15000 });
+  const v = await p.evaluate((t) => { const P = HAADER_PORTAL.P; const mine = P.m.sections.map((s) => { const x = H.stat(P.m, s, s.rows[0]); return [s.crn, x.absent, x.pres, x.late]; }).sort(); const full = A.m.sections.filter((s) => s.rows.some((r) => r.id === t)).map((s) => { const x = H.stat(A.m, s, s.rows.find((r) => r.id === t)); return [s.crn, x.absent, x.pres, x.late]; }).sort(); return { mine: JSON.stringify(mine), full: JSON.stringify(full), banner: !!document.querySelector('.tp-pv'), shell: document.getElementById('shell').hidden, out: !!document.querySelector('#tportal [data-tp="out"]') }; }, tid);
+  check('الواجهة: البوابة كما يراها المتدرب، بشريط المعاينة ودون خروج أو كلمة مرور', v.banner && v.shell && !v.out, v);
+  check('أرقام المعاينة من الخادم مطابقة لما يراه المسؤول', v.mine === v.full, v);
+  check('الخط الزمني: في بوابة المتدرب أيضاً', await p.evaluate(() => { const b = document.getElementById('tlBarTp'); return !!b && b.closest('#tportal') && b.querySelectorAll('.tll li').length >= 1; }));
+  const gt = await p.evaluate(() => { const c = [...document.querySelectorAll('#tportal .tp-grades')].find((x) => /مقرر رصد تجريبي/.test(x.innerText)); if (!c) return null; const cells = (lab) => { const tr = [...c.querySelectorAll('tr')].find((r) => r.querySelector('th') && r.querySelector('th').innerText.trim() === lab); return tr ? [...tr.querySelectorAll('td')].map((td) => td.innerText.replace(/\s+/g, ' ').trim()) : null; }; return { head: [...c.querySelectorAll('thead th')].map((x) => x.innerText.trim()), t1: cells('الاختبار الأول'), t2: cells('الاختبار الثاني'), work: cells('مجموع أعمال السنة'), fin: cells('الاختبار النهائي'), part: cells('مجموع الجزء'), chip: c.querySelector('.chip').innerText, txt: c.innerText }; });
+  check('درجاتي: عمود للنظري وآخر للعملي', gt && gt.head.join('|') === 'البند|نظري|عملي', gt && gt.head);
+  check('درجاتي: الاختبار الأول والثاني من بنود أعمال السنة', gt && gt.t1[0] === '8 / 10' && gt.t1[1] === '9 / 10' && gt.t2[0] === '8 / 10' && gt.t2[1] === '— / 10', gt && [gt.t1, gt.t2]);
+  check('درجاتي: مجموع أعمال السنة (والعملي جزئي حتى الآن)', gt && gt.work[0] === '25 / 30' && /^15 \/ 30 حتى الآن$/.test(gt.work[1]), gt && gt.work);
+  check('درجاتي: الاختبار النهائي ومجموع كل جزء', gt && gt.fin[0] === '15 / 20' && gt.fin[1] === '— / 20' && gt.part[0] === '40 / 50', gt && [gt.fin, gt.part]);
+  check('درجاتي: المرصود حتى الآن وموعد النهائي والتنبيه برايات', gt && /المرصود 40/.test(gt.chip) && /1448\/06\/20/.test(gt.txt) && /رايات/.test(gt.txt), gt && gt.chip);
+  await p.screenshot({ path: '/tmp/claude-0/-home-claude/da2fea53-9caa-5476-bb95-529d935e4850/scratchpad/web-preview.png', fullPage: true });
+  await p.click('[data-tp="pv-end"]');
+  check('العودة إلى المنصة دون إعادة دخول', await p.evaluate(() => !document.getElementById('shell').hidden && !document.getElementById('tportal') && A.me.username === 'aalkhathami'));
+  check('لا أخطاء JavaScript', !errs.length, errs);
+  // حساب مدرب
+  const c2 = await b.newContext({ timezoneId: 'Asia/Riyadh', locale: 'ar-SA', ...require('playwright').devices['iPhone 13'] }), p2 = await c2.newPage();
+  p2.on('pageerror', (e) => errs.push(String(e).slice(0, 200)));
+  await p2.goto(URL0); await p2.waitForSelector('#liU'); await p2.fill('#liU', 't.ahmed'); await p2.fill('#liP', 'Trainer1-pass'); await p2.click('#liB');
+  await p2.waitForFunction(() => typeof A !== 'undefined' && A.me && A.fresh, null, { timeout: 30000 });
+  tv = await tlv(p2);
+  check('الخط الزمني: في حساب المدرب (الهاتف) دون تمرير أفقي', tv && tv.first && tv.n === tv.want && await p2.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth <= 1), tv);
+  await p2.screenshot({ path: '/tmp/claude-0/-home-claude/da2fea53-9caa-5476-bb95-529d935e4850/scratchpad/web-timeline-phone.png' });
+  check('لا أخطاء JavaScript (المدرب)', !errs.length, errs);
+  await b.close();
+  sql(`select set_config('haader.sys','1',false); delete from doc where col in ('gsec','gmarks') and id='99001';`);
+  L.done('معاينة بوابة المتدرب (الويب)');
+})().catch((e) => { console.error(e); process.exit(1); });

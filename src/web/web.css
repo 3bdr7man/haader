@@ -1,42 +1,7 @@
 /* ===== نسخة الويب: الدخول وبوابة المتدرب ===== */
 .gatehelp{font-size:12px;opacity:.85;margin:4px 0 0}
 #gate .btn:disabled{opacity:.65;cursor:progress}
-.gspin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(127,127,127,.25);border-top-color:var(--pri,#0066CC);animation:gsp 0.9s linear infinite;margin:6px auto}
-@keyframes gsp{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.gspin{animation:none}}
 #webupd{position:fixed;inset-inline-start:16px;bottom:16px;z-index:9999;background:var(--surface,#fff);color:var(--ink,#12233A);border:1px solid var(--line,#D5DEE9);border-radius:14px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.18);display:flex;gap:10px;align-items:center;font-size:13.5px}
 
-#tportal{min-height:100vh;background:var(--bg,#F2F5F9);color:var(--ink,#12233A);font-family:Cairo,"Sakkal Majalla",Tahoma,sans-serif;display:flex;flex-direction:column}
-.tp-head{display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,#003366,#0066CC);color:#fff;flex-wrap:wrap}
-.tp-head .lgplate{background:#fff;border-radius:12px;padding:4px 8px;display:flex}.tp-head .lgplate img{height:34px}
-.tp-who{display:grid;flex:1;min-width:160px}.tp-who b{font-size:16px}.tp-who small{opacity:.85;font-size:12.5px}
-.tp-act{display:flex;gap:6px}.tp-act .btn{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.35)}
-.tp-main{width:min(860px,100%);margin:0 auto;padding:14px 16px 24px;display:grid;gap:12px;box-sizing:border-box;flex:1}
-.tp-card{background:var(--surface,#fff);border:1px solid var(--line,#D5DEE9);border-radius:16px;padding:14px 16px;box-shadow:0 2px 10px rgba(0,30,60,.05)}
-.tp-card h2{margin:0 0 6px;font-size:17px}.tp-card .sub{margin:4px 0;color:var(--ink2,#4A5D75);font-size:13px;line-height:1.8}
-.tp-card.bad{border-color:color-mix(in srgb,var(--bad,#B3261E) 50%,transparent)}
-.tp-qr{text-align:center}.tp-qr.ok{border:2px solid var(--ok,#0B7A5A)}.tp-qr.bad{border:2px solid var(--bad,#B3261E)}
-.tp-big{width:56px;height:56px;border-radius:50%;margin:4px auto 6px;display:grid;place-items:center;font-size:30px;font-weight:800;color:#fff;background:var(--ok,#0B7A5A)}
-.tp-qr.bad .tp-big{background:var(--bad,#B3261E)}.tp-st{font-size:18px;font-weight:800;margin:4px 0}
-.tp-ch{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
-.tp-kpi{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:10px 0}
-.tp-kpi div{border:1px solid var(--line,#D5DEE9);border-radius:12px;padding:8px;text-align:center;display:grid;gap:2px}
-.tp-kpi b{font-size:18px}.tp-kpi span{font-size:12px;color:var(--ink2,#4A5D75)}
-.tp-bar{position:relative;height:10px;border-radius:99px;background:color-mix(in srgb,var(--ink3,#6F8197) 18%,transparent);margin:6px 0}
-.tp-bar i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:99px;background:var(--ok,#0B7A5A)}
-.tp-bar i.warn{background:var(--warn,#B26A00)}.tp-bar i.bad{background:var(--bad,#B3261E)}
-.tp-bar em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--warn,#B26A00)}
-.tp-alerts{list-style:none;margin:0;padding:0;display:grid;gap:6px}
-.tp-alerts li{padding:8px 11px;border-radius:10px;border:1px solid var(--line,#D5DEE9);border-inline-start:4px solid var(--info,#0066CC);font-size:13.5px}
-.tp-alerts li.bad{border-inline-start-color:var(--bad,#B3261E)}.tp-alerts li.warn{border-inline-start-color:var(--warn,#B26A00)}
-.tp-course details{margin-top:6px}.tp-course summary{cursor:pointer;font-weight:700;font-size:13.5px}
-.tp-course table{width:100%;border-collapse:collapse;font-size:13px}.tp-course th,.tp-course td{padding:6px 8px;border-bottom:1px solid var(--line,#D5DEE9);text-align:start}
-.tp-foot{text-align:center;font-size:11.5px;color:var(--ink3,#6F8197);padding:10px}
-.tp-modal{position:fixed;inset:0;background:rgba(0,10,30,.5);display:grid;place-items:center;z-index:9999;padding:16px}
-.tp-modal .tp-card{width:min(400px,100%);display:grid;gap:10px}.tp-modal label{display:grid;gap:4px;font-size:13px}
-.tp-modal input{padding:10px 12px;border:1px solid var(--line,#D5DEE9);border-radius:10px;font:inherit}
-.tp-modal .err{color:var(--bad,#B3261E);font-size:13px}
-@media (max-width:620px){.tp-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.tp-kpi div:last-child{grid-column:span 2}.tp-head{padding:10px 12px}}
-.tp-org{display:grid;justify-items:center;gap:0}.tp-head .lgdept{color:#fff;font-size:12.5px;margin-top:4px}
 
 /* استيراد الدرجات من Excel */

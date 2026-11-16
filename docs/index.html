@@ -666,11 +666,25 @@ tr.gds td{border-top:2px solid var(--gl-line,var(--line))}
 /* ===== نسخة الويب: الدخول وبوابة المتدرب ===== */
 .gatehelp{font-size:12px;opacity:.85;margin:4px 0 0}
 #gate .btn:disabled{opacity:.65;cursor:progress}
+#webupd{position:fixed;inset-inline-start:16px;bottom:16px;z-index:9999;background:var(--surface,#fff);color:var(--ink,#12233A);border:1px solid var(--line,#D5DEE9);border-radius:14px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.18);display:flex;gap:10px;align-items:center;font-size:13.5px}
+
+
+/* استيراد الدرجات من Excel */
+
+/* مشترك بين النسختين: عين كلمة المرور، واسم القسم، ووضع المدرب لحساب المسؤول */
+.pwwrap{position:relative;display:block}.pwwrap input{width:100%;box-sizing:border-box;padding-left:46px!important}
+.pweye{position:absolute;left:4px;top:50%;transform:translateY(-50%);width:36px;height:36px;display:grid;place-items:center;border:0;background:transparent;color:inherit;opacity:.75;border-radius:8px;cursor:pointer;padding:0}
+.pweye:hover,.pweye:focus-visible{opacity:1;background:rgba(127,127,127,.16)}.pweye:focus-visible{outline:2px solid currentColor;outline-offset:1px}
+.pweye svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lgdept{margin:6px 2px 2px;text-align:center;font-size:13px;font-weight:700;line-height:1.5;color:inherit;opacity:.95}
+#side .lgdept{color:#EAF4FA}
+.wbtn.swtr{display:block;width:100%;margin:6px 0 4px;padding:7px 10px;border-radius:10px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;cursor:pointer}
+.wbtn.swtr.on{background:#F2B544;color:#1B2A3A;border-color:#F2B544}
+body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
+/* بوابة المتدرب (الويب، ومعاينتها من حساب المسؤول في النسختين) */
 .gspin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(127,127,127,.25);border-top-color:var(--pri,#0066CC);animation:gsp 0.9s linear infinite;margin:6px auto}
 @keyframes gsp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.gspin{animation:none}}
-#webupd{position:fixed;inset-inline-start:16px;bottom:16px;z-index:9999;background:var(--surface,#fff);color:var(--ink,#12233A);border:1px solid var(--line,#D5DEE9);border-radius:14px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.18);display:flex;gap:10px;align-items:center;font-size:13.5px}
-
 #tportal{min-height:100vh;background:var(--bg,#F2F5F9);color:var(--ink,#12233A);font-family:Cairo,"Sakkal Majalla",Tahoma,sans-serif;display:flex;flex-direction:column}
 .tp-head{display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,#003366,#0066CC);color:#fff;flex-wrap:wrap}
 .tp-head .lgplate{background:#fff;border-radius:12px;padding:4px 8px;display:flex}.tp-head .lgplate img{height:34px}
@@ -703,19 +717,50 @@ tr.gds td{border-top:2px solid var(--gl-line,var(--line))}
 .tp-modal .err{color:var(--bad,#B3261E);font-size:13px}
 @media (max-width:620px){.tp-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.tp-kpi div:last-child{grid-column:span 2}.tp-head{padding:10px 12px}}
 .tp-org{display:grid;justify-items:center;gap:0}.tp-head .lgdept{color:#fff;font-size:12.5px;margin-top:4px}
+.tp-pv{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;justify-content:space-between;padding:9px 16px;background:linear-gradient(90deg,#3B2A86,#1F5AA6);color:#fff;font-size:13.5px;font-weight:700}
+.tp-pv .btn{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.45)}
+.tpv-list{display:grid;gap:4px;max-height:52vh;overflow:auto}.tpv-list button{all:unset;cursor:pointer;display:flex;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:10px;border:1px solid var(--line,#D5DEE9)}.tpv-list button:hover,.tpv-list button:focus-visible{border-color:var(--pri,#0066CC);background:color-mix(in srgb,var(--pri,#0066CC) 8%,transparent)}.tpv-list small{color:var(--ink3,#6F8197)}
+.tp-main{align-content:start}
 
-/* استيراد الدرجات من Excel */
+/* درجاتي في بوابة المتدرب */
+.tp-gt{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+.tp-gt th,.tp-gt td{padding:7px 9px;border-bottom:1px solid var(--line,#D5DEE9);text-align:start}
+.tp-gt thead th{font-size:12.5px;color:var(--ink2,#4A5D75);background:color-mix(in srgb,var(--line,#D5DEE9) 30%,transparent)}
+.tp-gt td.n,.tp-gt th.n{text-align:center;white-space:nowrap}
+.tp-gt tbody th{font-weight:600}
+.tp-gt small{color:var(--ink2,#4A5D75);font-size:11.5px}
+.tp-gt .tp-gx{color:var(--ink2,#4A5D75)}
+.tp-gt tr.sum th,.tp-gt tr.sum td{background:color-mix(in srgb,var(--brand,#0B5394) 7%,transparent)}
+.tp-gt tr.fin th,.tp-gt tr.fin td{border-top:2px solid var(--line,#D5DEE9)}
+.tp-gt tr.tot th,.tp-gt tr.tot td{font-size:14px}
+.tp-gp{display:block;font-style:normal;font-size:11px;color:var(--warn,#8A5A00)}
+.tp-gnote{border-radius:10px;padding:8px 10px;margin:8px 0;font-size:13px;background:color-mix(in srgb,var(--warn,#8A5A00) 10%,transparent)}
 
-/* مشترك بين النسختين: عين كلمة المرور، واسم القسم، ووضع المدرب لحساب المسؤول */
-.pwwrap{position:relative;display:block}.pwwrap input{width:100%;box-sizing:border-box;padding-left:46px!important}
-.pweye{position:absolute;left:4px;top:50%;transform:translateY(-50%);width:36px;height:36px;display:grid;place-items:center;border:0;background:transparent;color:inherit;opacity:.75;border-radius:8px;cursor:pointer;padding:0}
-.pweye:hover,.pweye:focus-visible{opacity:1;background:rgba(127,127,127,.16)}.pweye:focus-visible{outline:2px solid currentColor;outline-offset:1px}
-.pweye svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.lgdept{margin:6px 2px 2px;text-align:center;font-size:13px;font-weight:700;line-height:1.5;color:inherit;opacity:.95}
-#side .lgdept{color:#EAF4FA}
-.wbtn.swtr{display:block;width:100%;margin:6px 0 4px;padding:7px 10px;border-radius:10px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;cursor:pointer}
-.wbtn.swtr.on{background:#F2B544;color:#1B2A3A;border-color:#F2B544}
-body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
+/* الخط الزمني لأعمال الفصل التدريبي: تنبيه في كل الحسابات وبوابة المتدرب */
+.tlbar{border:1px solid color-mix(in srgb,var(--brand,#0B5394) 30%,var(--line,#D5DEE9));border-inline-start:4px solid var(--brand,#0B5394);border-radius:14px;padding:10px 14px;margin:0 0 14px;background:color-mix(in srgb,var(--brand,#0B5394) 5%,var(--surface,#fff));box-shadow:0 2px 10px rgba(0,30,60,.05)}
+.tlbar.min{padding:8px 12px}
+.tlh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tli svg{width:24px;height:24px;fill:none;stroke:var(--brand,#0B5394);stroke-width:1.8;stroke-linecap:round;display:block}
+.tlt{display:grid;gap:1px;flex:1 1 220px;min-width:0}.tlt b{font-size:14.5px;line-height:1.6}.tlt small{font-size:12px;color:var(--ink2,#4A5D75)}
+.tlb{display:flex;gap:6px;flex-wrap:wrap}
+.tll{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.tll li{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:10px;background:var(--surface,#fff);border:1px solid var(--line,#D5DEE9)}
+.tll li .chip{flex:none;white-space:nowrap}
+.tlx{display:grid;gap:1px;min-width:0}.tlx b{font-size:13.5px;font-weight:600;line-height:1.6}.tlx small{font-size:12px;color:var(--ink2,#4A5D75)}
+.tl-ov{position:fixed;inset:0;z-index:9999;background:rgba(10,20,35,.45);display:grid;place-items:center;padding:16px}
+.tl-box{background:var(--surface,#fff);color:var(--ink,#13233A);border-radius:16px;padding:14px;width:min(1000px,100%);max-height:calc(100vh - 32px);display:grid;grid-template-rows:auto 1fr;gap:10px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.tl-tw{overflow:auto;max-width:100%}
+.tl-t{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+.tl-t th,.tl-t td{padding:6px 8px;border-bottom:1px solid var(--line,#D5DEE9);text-align:start;vertical-align:top}
+.tl-t td.n,.tl-t th.n{text-align:center;white-space:nowrap}
+.tl-t thead th{position:sticky;top:0;background:var(--surface,#fff);font-size:12.5px;color:var(--ink2,#4A5D75)}
+.tl-t tr.tlg th{background:color-mix(in srgb,var(--brand,#0B5394) 12%,var(--surface,#fff));color:var(--brand,#0B5394);font-size:13.5px}
+.tl-t tr.now td{background:color-mix(in srgb,var(--warn,#8A5A00) 9%,transparent)}
+.tl-t tr.soon td{background:color-mix(in srgb,var(--brand,#0B5394) 5%,transparent)}
+.tl-t tr.done td{color:var(--ink2,#4A5D75)}
+.tl-t .tln{font-size:12px;color:var(--ink2,#4A5D75)}
+.tlc{display:block;font-size:11.5px;color:var(--warn,#8A5A00)}
+@media print{.tlbar,.tl-ov{display:none!important}}
 
 /* خيارات استيراد درجات Excel (مشترك بين نسخة الويب ونسخة Claude) */
 .gxopt{display:grid;gap:10px;margin:14px 0}
@@ -956,7 +1001,7 @@ body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
 </div>
 <div id="toast" role="status" dir="rtl" hidden></div>
 <div id="tip" dir="rtl" hidden></div>
-<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="e56a1a16790f";</script>
+<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="998458319abb";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 /* ====================================================================
@@ -6616,13 +6661,16 @@ if (document.getElementById('shell')) (() => {
 
 /* ====================================================================
    بوابة المتدرب: يدخل برقمه التدريبي، ويرى مقرراته وشعبه وسجل حضوره
-   وغيابه ونسبته وحالة الإنذار والحرمان وتنبيهاته — بياناته وحده.
+   وغيابه ونسبته وحالة الإنذار والحرمان وتنبيهاته، ودرجاته (أعمال السنة والاختبار
+   الأول والثاني والنهائي، نظري وعملي) — بياناته وحده.
    ويسجّل حضوره بمسح رمز QR الذي يعرضه المدرب في القاعة.
    البيانات من دالة trainee_me على الخادم، والحساب بمحرك المنصة نفسه.
+   ومعاينة المسؤول: يرى البوابة كما يراها متدرب بعينه (للاطلاع والتطوير)،
+   من trainee_preview في الويب، ومن بيانات المنصة نفسها في نسخة Claude.
    ==================================================================== */
-if (window.HAADER_WEB) (() => {
-  const W = window.HAADER_WEB;
-  const P = { me: null, data: null, m: null, qr: null, busy: false, err: '' };
+if (document.getElementById('shell')) (() => {
+  const W = window.HAADER_WEB || null;
+  const P = { me: null, data: null, m: null, qr: null, busy: false, err: '', pv: null };
   const DAYS_AR = { 'ح': 'حاضر', 'غ': 'غائب', 'س': 'مستأذن', 'ملغ': 'محاضرة ملغاة', 'سحب': 'منسحب' };
   const codeText = (c) => (!c ? '—' : H.isLate(c) ? `متأخر ${H.lateMin(c)} د` : DAYS_AR[c] || c);
   const codeTone = (c) => (!c ? '' : c === 'ح' ? 'ok' : c === 'غ' ? 'bad' : H.isLate(c) ? 'warn' : c === 'س' ? 'info' : '');
@@ -6644,15 +6692,35 @@ if (window.HAADER_WEB) (() => {
     if (code) await checkin(code);
     await load();
   }
+  /* بيانات المتدرب من قاعدة المنصة نفسها (نسخة Claude) بالشكل الذي تعيده trainee_me */
+  function localData(t) {
+    const secs = {}, mks = {}, has = (x) => JSON.stringify(x || '').includes('"' + t + '"');
+    Object.entries(A.raw.sections || {}).forEach(([crn, sec]) => {
+      const row = (sec.rows || []).find((r) => r.id === t); if (!row) return;
+      const c = Object.assign({}, sec); delete c.sheet; c.rows = [row]; c.trainerName = ((A.raw.accounts || {})[sec.trainer] || {}).name || '';
+      secs[crn] = c; mks[crn] = { m: { [t]: (((A.raw.marks || {})[crn] || {}).m || {})[t] || {} } };
+    });
+    const M = A.raw.meta || {}, rowsOf = (k) => ({ rows: ((M[k] || {}).rows || []).filter(has) });
+    const name = Object.values(secs).map((x) => x.rows[0].name).find(Boolean) || '';
+    const warn = Object.values(A.raw.warnlog || {}).filter((w) => w && w.id === t && (w.status || 'ok') === 'ok').sort((a, b) => String(b.at).localeCompare(String(a.at))).map((w) => ({ at: w.at, crn: w.crn, course: w.course, type: w.type, reason: w.reason }));
+    const ta = (A.raw.tacc || {})[t];
+    const grades = {};
+    Object.entries(A.raw.gsec || {}).forEach(([crn, g]) => {
+      const row = (g.rows || []).find((r) => r.id === t); if (!row) return;
+      const gm = (A.raw.gmarks || {})[crn] || {};
+      grades[crn] = { crn, code: g.code || '', name: g.name || '', term: g.term || '', pair: g.pair || '', comps: g.comps || [], items: g.items || {}, exam: g.exam || {}, row: { el: row.el, st: row.st }, g: (gm.g || {})[t] || {}, s: (gm.s || {})[t] || {} };
+    });
+    return { id: t, name, grades, sections: secs, marks: mks, meta: { calendar: M.calendar || {}, settings: M.settings || {}, timeline: M.timeline || null, excuses: rowsOf('excuses'), reinstated: rowsOf('reinstated') }, warn, acc: ta ? { temp: !!ta.temp, st: ta.st || '' } : null };
+  }
   async function load() {
     P.busy = true; P.err = ''; paint();
     try {
-      P.data = await W.rpc('trainee_me', {});
+      P.data = P.pv ? (W ? await W.rpc('trainee_preview', { p_id: P.pv }) : localData(P.pv)) : await W.rpc('trainee_me', {});
       const meta = P.data.meta || {};
       P.m = H.build({ sections: P.data.sections, marks: P.data.marks, notes: {}, calendar: (meta.calendar || {}).rows || [], settings: meta.settings || {}, excuses: (meta.excuses || {}).rows || [], reinstated: (meta.reinstated || {}).rows || [] });
     } catch (e) { P.err = e.message || 'تعذر تحميل بياناتك.'; }
     P.busy = false; paint();
-    if (P.data && P.data.acc && P.data.acc.temp && !P.askedPw) { P.askedPw = true; pwBox(true); }
+    if (!P.pv && P.data && P.data.acc && P.data.acc.temp && !P.askedPw) { P.askedPw = true; pwBox(true); }
   }
   async function checkin(code) {
     P.qr = { busy: true }; paint();
@@ -6684,6 +6752,49 @@ if (window.HAADER_WEB) (() => {
     if (q.ok) return `<section class="tp-card tp-qr ok" role="status"><div class="tp-big">✓</div><h2>سُجّل حضورك</h2><p>${esc(q.course || '')} — الشعبة ${esc(q.crn || '')} • ${esc(q.d || '')}هـ</p><p class="tp-st">${q.late ? `متأخر ${q.late} دقيقة` : 'حاضر'}${q.applied && q.applied.startsWith('بقي') ? ` <small>(${esc(q.applied)} في الكشف)</small>` : ''}</p><p class="sub">وقت التسجيل: ${new Date(q.at).toLocaleTimeString('ar-SA-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}</p></section>`;
     return `<section class="tp-card tp-qr bad" role="alert"><div class="tp-big">!</div><h2>لم يُسجَّل الحضور</h2><p>${esc(q.msg || WHY[q.why] || 'تعذر التسجيل.')}</p>${q.course ? `<p class="sub">${esc(q.course)}</p>` : ''}</section>`;
   }
+  /* ---------- درجاتي: أعمال السنة (البنود والاختبار الأول والثاني) والاختبار النهائي، نظري وعملي ---------- */
+  const gnum = (v) => typeof v === 'number' && isFinite(v);
+  const gfmt = (v) => String(Math.round(v * 100) / 100);
+  const ITEM_LABEL = (n) => (/الشهري\s*(1|١|الأول)/.test(n) ? 'الاختبار الأول' : /الشهري\s*(2|٢|الثاني)/.test(n) ? 'الاختبار الثاني' : n);
+  const PART_ORDER = (p) => (p === 'نظري' ? 0 : p === 'عملي' ? 1 : 2);
+  function gradeModel(gr) {
+    const comps = (gr.comps || []).slice().sort((a, b) => PART_ORDER(a.part) - PART_ORDER(b.part) || String(a.k).localeCompare(String(b.k)));
+    const parts = [...new Set(comps.map((c) => c.part || 'أخرى'))];
+    const isFinal = (c) => /2$/.test(c.k) || /نهائي/.test(c.desc || '');
+    const cols = parts.map((p) => {
+      const cs = comps.filter((c) => (c.part || 'أخرى') === p);
+      const work = cs.find((c) => !isFinal(c)) || null, fin = cs.find(isFinal) || null;
+      return { p, work, fin, other: cs.filter((c) => c !== work && c !== fin) };
+    });
+    const itemNames = []; cols.forEach((c) => ((c.work && (gr.items || {})[c.work.k]) || []).forEach((it) => { if (!itemNames.includes(it.n)) itemNames.push(it.n); }));
+    const g = gr.g || {}, s = gr.s || {};
+    const cell = (v, max, cls) => `<td class="n${cls ? ' ' + cls : ''}">${gnum(v) ? `<b>${gfmt(v)}</b>` : '<span class="tp-gx">—</span>'}${gnum(max) ? `<small> / ${gfmt(max)}</small>` : ''}</td>`;
+    const rows = [];
+    itemNames.forEach((n) => rows.push(`<tr><th>${esc(ITEM_LABEL(n))}</th>${cols.map((c) => { const it = c.work && ((gr.items || {})[c.work.k] || []).find((x) => x.n === n); return it ? cell((s[c.work.k] || {})[n], it.max) : '<td></td>'; }).join('')}</tr>`));
+    const workVal = (c) => { if (!c.work) return null; const v = g[c.work.k]; if (gnum(v)) return v; const its = (gr.items || {})[c.work.k] || [], sv = s[c.work.k] || {}; const got = its.filter((it) => gnum(sv[it.n])); return got.length ? { partial: Math.round(got.reduce((a, it) => a + sv[it.n], 0) * 100) / 100 } : null; };
+    rows.push(`<tr class="sum"><th>مجموع أعمال السنة</th>${cols.map((c) => { if (!c.work) return '<td></td>'; const v = workVal(c); return v && typeof v === 'object' ? `<td class="n"><b>${gfmt(v.partial)}</b><small> / ${gfmt(c.work.max)}</small><em class="tp-gp">حتى الآن</em></td>` : cell(v, c.work.max); }).join('')}</tr>`);
+    cols.forEach((c) => c.other.forEach((o) => rows.push(`<tr><th>${esc(o.desc || o.k)}</th>${cols.map((x) => (x === c ? cell(g[o.k], o.max) : '<td></td>')).join('')}</tr>`)));
+    rows.push(`<tr class="fin"><th>الاختبار النهائي</th>${cols.map((c) => (c.fin ? cell(g[c.fin.k], c.fin.max) : '<td></td>')).join('')}</tr>`);
+    const partTot = cols.map((c) => { const cs = [c.work, c.fin].concat(c.other).filter(Boolean); const max = cs.reduce((a, x) => a + (+x.max || 0), 0), got = cs.filter((x) => gnum(g[x.k])); return { max, v: got.length ? got.reduce((a, x) => a + g[x.k], 0) : null, full: got.length === cs.length }; });
+    if (cols.length > 1) rows.push(`<tr class="sum tot"><th>مجموع الجزء</th>${partTot.map((t) => cell(t.v, t.max)).join('')}</tr>`);
+    const max = comps.reduce((a, c) => a + (+c.max || 0), 0), got = comps.filter((c) => gnum(g[c.k])), tot = got.reduce((a, c) => a + g[c.k], 0);
+    return { cols, rows, max, tot, n: got.length, need: comps.length };
+  }
+  function gradesCards() {
+    const G0 = P.data && P.data.grades; if (!G0) return '';
+    const list = Object.values(G0).sort((a, b) => String(a.name).localeCompare(String(b.name), 'ar') || String(a.crn).localeCompare(String(b.crn)));
+    if (!list.length) return '<section class="tp-card tp-grades"><h2>درجاتي</h2><p class="sub">لا توجد لك شعبة رصد درجات في المنصة بعد.</p></section>';
+    return list.map((gr) => {
+      const m = gradeModel(gr), el = !gr.row || gr.row.el !== false;
+      const chip = !m.n ? ['لم تُرصد بعد', ''] : m.n === m.need ? [`${gfmt(m.tot)} من ${gfmt(m.max)}`, 'ok'] : [`المرصود ${gfmt(m.tot)}`, 'info'];
+      const ex = gr.exam || {}, exTxt = [ex.date, ex.time, ex.place].filter(Boolean).map(esc).join(' • ');
+      return `<section class="tp-card tp-grades"><div class="tp-ch"><div><h2>درجاتي — ${esc(gr.name)}</h2><p class="sub">${esc(gr.code)} • شعبة الرصد ${esc(gr.crn)}${gr.pair ? ` (العملي في الشعبة ${esc(gr.pair)})` : ''}${gr.term ? ' • ' + esc(gr.term) : ''}</p></div><span class="chip ${chip[1]}">${chip[0]}</span></div>
+        ${el ? '' : `<div class="tp-gnote warn">حالتك في رايات «${esc((gr.row && gr.row.st) || '')}»، فلا تُرصد لك درجات في هذه الشعبة. راجع مدرب المقرر.</div>`}
+        <div class="tw"><table class="tp-gt"><thead><tr><th>البند</th>${m.cols.map((c) => `<th class="n">${esc(c.p)}</th>`).join('')}</tr></thead><tbody>${m.rows.join('')}</tbody></table></div>
+        ${exTxt ? `<p class="sub">موعد الاختبار النهائي: ${exTxt}</p>` : ''}
+        <p class="sub">${m.n ? `رُصد ${m.n} من ${m.need} مكوّنات. ` : 'لم يرصد المدرب درجاتك في هذا المقرر بعد، والجدول يبيّن توزيع الدرجات المعتمد. '}الدرجات كما رصدها مدرب المقرر في المنصة، والمعتمد النهائي ما يُرصد في رايات.</p></section>`;
+    }).join('');
+  }
   function paint() {
     const root = $('#tportal'); if (!root) return;
     const rows = rowsOf(), name = (P.data && P.data.name) || (P.me && P.me.name) || '';
@@ -6696,13 +6807,16 @@ if (window.HAADER_WEB) (() => {
     });
     ((P.data && P.data.warn) || []).forEach((w) => alerts.push(['info', `أُرسل إليك ${w.type === 'dep' ? 'إشعار حرمان' : w.type === 'warn' ? 'إنذار' : 'تنبيه'} في «${w.course || w.crn}» بتاريخ ${String(w.at || '').slice(0, 10)}.`]));
     const dept = ((P.m && P.m.sections.find((x) => x.dept)) || {}).dept || DEPT;
-    root.innerHTML = `<header class="tp-head"><div class="tp-org"><div class="lgplate"><img src="${LOGO}" alt="${LOGO_ALT}"></div><div class="lgdept">${esc(dept)}</div></div><div class="tp-who"><b>${esc(name)}</b><small>الرقم التدريبي ${esc((P.data && P.data.id) || (P.me && P.me.id) || '')}</small></div><div class="tp-act"><button class="btn" data-tp="pw">كلمة المرور</button><button class="btn" data-tp="out">خروج</button></div></header>
+    const pv = P.pv ? `<div class="tp-pv" role="status"><span>معاينة كما يراها المتدرب — للاطلاع فقط، ولا يُسجَّل أي إجراء باسمه.</span><span class="row"><button class="btn s" data-tp="pv-other">متدرب آخر</button><button class="btn s" data-tp="pv-end">العودة إلى المنصة</button></span></div>` : '';
+    root.innerHTML = `${pv}<header class="tp-head"><div class="tp-org"><div class="lgplate"><img src="${LOGO}" alt="${LOGO_ALT}"></div><div class="lgdept">${esc(dept)}</div></div><div class="tp-who"><b>${esc(name)}</b><small>الرقم التدريبي ${esc((P.data && P.data.id) || (P.me && P.me.id) || '')}</small></div><div class="tp-act">${P.pv ? '' : '<button class="btn" data-tp="pw">كلمة المرور</button><button class="btn" data-tp="out">خروج</button>'}</div></header>
     <main class="tp-main">
       ${qrCard()}
       ${P.busy ? '<section class="tp-card"><h2>جارٍ تحميل بياناتك…</h2><div class="gspin"></div></section>' : ''}
       ${P.err ? `<section class="tp-card bad"><h2>تعذر تحميل بياناتك</h2><p>${esc(P.err)}</p><button class="btn p" data-tp="reload">إعادة المحاولة</button></section>` : ''}
       ${!P.busy && P.data ? `
       <section class="tp-card"><h2>التنبيهات</h2>${alerts.length ? `<ul class="tp-alerts">${alerts.map((a) => `<li class="${a[0]}">${esc(a[1])}</li>`).join('')}</ul>` : '<p class="sub">لا تنبيهات. استمر على انتظامك.</p>'}</section>
+      ${window.HAADER_TL ? window.HAADER_TL.bar((P.data.meta || {}).timeline, 'tp') : ''}
+      ${gradesCards()}
       ${rows.length ? rows.map((r) => `<section class="tp-card tp-course"><div class="tp-ch"><div><h2>${esc(r.sec.course)}</h2><p class="sub">${esc(r.sec.kind || '')} • الشعبة ${esc(r.sec.crn)}${r.sec.trainerName ? ' • المدرب: ' + esc(r.sec.trainerName) : ''}${(r.sec.meets || []).length ? ' • ' + r.sec.meets.map((x) => esc(x.day + ' ' + x.start)).join('، ') : ''}</p></div><span class="chip ${r.status[1]}">${r.status[0]}</span></div>
         <div class="tp-kpi"><div><b>${r.st.pres + r.st.late}</b><span>حضور</span></div><div><b>${r.st.absent}</b><span>غياب محتسب</span></div><div><b>${hrs(r.absMin)}</b><span>ساعات الغياب</span></div><div><b>${pct(r.st.rate)}</b><span>نسبة الغياب</span></div><div><b>${r.st.late}</b><span>تأخير${r.st.lateMins ? ` (${r.st.lateMins} د)` : ''}</span></div></div>
         <div class="tp-bar" role="img" aria-label="الغياب ${r.st.absent} من حد الحرمان ${r.dep}"><i style="width:${Math.min(100, (r.st.absent / Math.max(1, r.dep)) * 100)}%" class="${r.status[1]}"></i><em style="inset-inline-start:${(r.warn / Math.max(1, r.dep)) * 100}%"></em></div>
@@ -6722,7 +6836,9 @@ if (window.HAADER_WEB) (() => {
   document.addEventListener('click', async (ev) => {
     const b = ev.target.closest('[data-tp]'); if (!b) return;
     const k = b.dataset.tp;
-    if (k === 'out') W.signOut();
+    if (k === 'out') { if (W) W.signOut(); }
+    else if (k === 'pv-end') endPreview();
+    else if (k === 'pv-other') pickTrainee();
     else if (k === 'reload') load();
     else if (k === 'pw') pwBox(false);
     else if (k === 'close') { const m = b.closest('.tp-modal'); if (m) m.remove(); }
@@ -6745,11 +6861,160 @@ if (window.HAADER_WEB) (() => {
   }, true);
   /* رمز QR ممسوح والصفحة مفتوحة أصلاً */
   window.addEventListener('hashchange', () => {
-    const q = /(?:^#|&)qr=([^&]+)/.exec(location.hash); if (!q || W.phase !== 'trainee') return;
+    const q = /(?:^#|&)qr=([^&]+)/.exec(location.hash); if (!q || !W || W.phase !== 'trainee' || P.pv) return;
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* */ }
     checkin(decodeURIComponent(q[1])).then(load);
   });
-  window.HAADER_PORTAL = { start, load, P };
+  /* ---------- معاينة المسؤول ---------- */
+  const mayPreview = () => !!(A.me && A.me.role === 'admin' && !A.asTrainer);
+  function trainees() {
+    const o = {};
+    Object.values(A.raw.sections || {}).forEach((s) => (s.rows || []).forEach((r) => { const x = o[r.id] || (o[r.id] = { id: r.id, name: r.name, secs: [] }); x.secs.push(s.crn); }));
+    return Object.values(o).sort((a, b) => String(a.name).localeCompare(String(b.name), 'ar'));
+  }
+  const listHtml = (q) => { const n = String(q || '').trim(), L = trainees().filter((t) => !n || t.id.includes(n) || String(t.name).includes(n)); return L.slice(0, 80).map((t) => `<button data-act="tp-preview-go" data-id="${esc(t.id)}"><span>${esc(t.name)}</span><small>${esc(t.id)} • ${t.secs.map(esc).join('، ')}</small></button>`).join('') || '<p class="sub">لا نتائج.</p>'; };
+  function pickTrainee() {
+    if (!mayPreview()) return;
+    if (P.pv) endPreview(true);
+    modal(`<h2>معاينة بوابة المتدرب</h2><div class="sub">اختر متدرباً لترى البوابة كما تظهر له: مقرراته ودرجاته وحضوره وغيابه وتنبيهاته. للاطلاع فقط، ولا يُسجَّل أي إجراء باسمه.</div><label>بحث بالاسم أو الرقم التدريبي<input type="search" id="tpvQ" autocomplete="off"></label><div class="tpv-list" id="tpvL">${listHtml('')}</div><div class="row"><button class="btn" data-act="modal-close">إغلاق</button></div>`);
+    setTimeout(() => { const i = document.getElementById('tpvQ'); if (i) i.focus(); }, 30);
+  }
+  document.addEventListener('input', (ev) => { if (ev.target && ev.target.id === 'tpvQ') { const l = document.getElementById('tpvL'); if (l) l.innerHTML = listHtml(ev.target.value); } });
+  async function preview(id) {
+    if (!mayPreview()) return;
+    closeModal();
+    P.pv = id; P.data = null; P.m = null; P.qr = null; P.err = '';
+    let root = $('#tportal');
+    if (!root) { root = document.createElement('div'); root.id = 'tportal'; root.dir = 'rtl'; root.lang = 'ar'; document.body.appendChild(root); }
+    root.hidden = false; $('#shell').hidden = true; window.scrollTo(0, 0);
+    await load();
+    try { audit([[new Date().toISOString(), '—', id, 'معاينة بوابة المتدرب', '', '', 'معاينة البوابة كما يراها المتدرب', 'معاينة', A.me ? A.me.name : '']]); } catch (e) { /* السجل لا يمنع العرض */ }
+  }
+  function endPreview(keep) {
+    P.pv = null; P.data = null; P.m = null;
+    const root = $('#tportal'); if (root) root.remove();
+    $('#shell').hidden = false; if (!keep) { render(true); window.scrollTo(0, 0); }
+  }
+  /* أثناء المعاينة تبقى المنصة مخفية حتى لو أُعيد رسمها بتحديث البيانات */
+  const baseRenderPv = render;
+  render = function () { const r = baseRenderPv.apply(this, arguments); if (P.pv) { const sh = $('#shell'); if (sh) sh.hidden = true; } return r; };
+  ACT['tp-preview'] = () => pickTrainee();
+  ACT['tp-preview-go'] = (e) => preview(e.dataset.id);
+  /* زر في بطاقة الحساب (يظهر أيضاً في نافذة الملف الشخصي) */
+  const baseBuildNav = buildNav;
+  buildNav = function () {
+    baseBuildNav();
+    const c = $('#who'); if (!c || !mayPreview()) return;
+    const b = document.createElement('button'); b.className = 'wbtn swtr tpv'; b.dataset.act = 'tp-preview'; b.textContent = 'معاينة بوابة المتدرب';
+    const row = c.querySelector('.row'); (row || c).insertAdjacentElement(row ? 'beforebegin' : 'beforeend', b);
+  };
+  window.HAADER_PORTAL = { start, load, P, preview, endPreview, localData };
+})();
+
+/* ====================================================================
+   الخط الزمني لأعمال الفصل التدريبي: تنبيه في كل الحسابات (المسؤول ورئيس القسم
+   والمدربين في كل واجهة ولكل الشعب) وفي بوابة المتدرب.
+   المصدر وثيقة meta/timeline في قاعدة بيانات المنصة: { title, source, show, tl:[{n,g,t,w,from,to,note,one,chk}] }
+   والتواريخ هجرية (أم القرى) كما وردت في تعميم الإدارة العامة لشؤون المتدربين.
+   يعرض التنبيه ما يجري الآن وما يبدأ خلال 30 يوماً، والجدول كاملاً في نافذة.
+   ==================================================================== */
+if (document.getElementById('shell')) (() => {
+  const SOON = 30;
+  const pad = (n) => String(n).padStart(2, '0');
+  let fmtH = null;
+  try { fmtH = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { year: 'numeric', month: 'numeric', day: 'numeric', timeZone: 'Asia/Riyadh' }); } catch (e) { fmtH = null; }
+  const hOf = (d) => { if (!fmtH) return ''; const p = {}; fmtH.formatToParts(d).forEach((x) => { p[x.type] = x.value; }); return `${p.year}-${pad(p.month)}-${pad(p.day)}`; };
+  /* جدول الأيام: تاريخ هجري ← عدد الأيام من اليوم (يُبنى مرة في اليوم) */
+  let cache = { day: '', map: {} };
+  function days() {
+    const today = hOf(new Date());
+    if (cache.day !== today) {
+      const map = {}, base = Date.now();
+      for (let i = -400; i <= 500; i++) { const h = hOf(new Date(base + i * 864e5)); if (!(h in map)) map[h] = i; }
+      cache = { day: today, map };
+    }
+    return cache;
+  }
+  const off = (h) => { const m = days().map; return h in m ? m[h] : null; };
+  const showD = (h) => (h ? `${h}هـ` : '');
+  /* حالة البند: now يجري الآن، soon لم يبدأ، done انتهى، open بلا تاريخ بداية محدد */
+  function state(r) {
+    const today = days().day, from = r.chk ? null : r.from, to = r.to;
+    if (!today) return { k: 'open' };
+    if (to && today > to) return { k: 'done' };
+    if (from && today < from) { const d = off(from); return { k: 'soon', d }; }
+    if (from && today >= from && (!to || today <= to)) { const d = to ? off(to) : null; return { k: 'now', d }; }
+    return { k: 'open', d: to ? off(to) : null };
+  }
+  const daysTxt = (n) => (n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n >= 3 && n <= 10 ? `${n} أيام` : `${n} يوماً`);
+  function badge(r, s) {
+    if (s.k === 'now') return s.d === 0 || r.one ? '<span class="chip bad">اليوم</span>' : `<span class="chip warn">جارٍ الآن${s.d != null ? ' — يبقى ' + daysTxt(s.d) : ''}</span>`;
+    if (s.k === 'soon') return `<span class="chip info">${s.d != null ? (s.d === 1 ? 'يبدأ غداً' : 'يبدأ بعد ' + daysTxt(s.d)) : 'قادم'}</span>`;
+    if (s.k === 'done') return '<span class="chip">انتهى</span>';
+    return '';
+  }
+  const period = (r) => (r.one || (r.from && r.from === r.to) ? showD(r.from || r.to) : r.from && r.to ? `${showD(r.from)} ← ${showD(r.to)}` : r.to ? `${r.note ? esc(r.note) + ' ← ' : ''}${showD(r.to)}` : esc(r.note || ''));
+  function picks(doc) {
+    const all = ((doc && doc.tl) || []).map((r) => ({ r, s: state(r) }));
+    const now = all.filter((x) => x.s.k === 'now').sort((a, b) => (a.s.d ?? 999) - (b.s.d ?? 999));
+    const up = all.filter((x) => x.s.k === 'soon' && x.s.d != null).sort((a, b) => a.s.d - b.s.d);
+    let soon = up.filter((x) => x.s.d <= SOON);
+    if (!soon.length && up.length) soon = up.filter((x) => x.s.d === up[0].s.d);
+    return { now, soon, all };
+  }
+  const ss = { get: (k) => { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { sessionStorage.setItem(k, v); } catch (e) { /* تفضيل للجلسة */ } } };
+  const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+
+  /* التنبيه: where = 'staff' أعلى كل واجهة، أو 'tp' في بوابة المتدرب */
+  function bar(doc, where) {
+    if (!doc || doc.show === false || !(doc.tl || []).length) return '';
+    const p = picks(doc), list = p.now.concat(p.soon);
+    const min = ss.get('haader.tlMin') === (doc.at || '1');
+    const head = `<div class="tlh"><span class="tli">${ICON}</span><div class="tlt"><b>${esc(doc.title || 'الخط الزمني لأعمال الفصل التدريبي')}</b><small>اليوم ${showD(days().day)}${doc.source ? ' • ' + esc(doc.source) : ''}</small></div><div class="tlb"><button class="btn s" data-tl="all">الخط الزمني كاملاً</button><button class="btn s" data-tl="${min ? 'max' : 'min'}" aria-expanded="${!min}">${min ? 'إظهار' : 'تصغير'}</button></div></div>`;
+    const items = list.length ? `<ul class="tll">${list.map(({ r, s }) => `<li class="${s.k}">${badge(r, s)}<span class="tlx"><b>${esc(r.t)}</b><small>${esc(r.w || '')} • ${period(r)}</small></span></li>`).join('')}</ul>` : '<p class="sub">لا مواعيد جارية ولا قادمة في الخط الزمني.</p>';
+    return `<section class="${where === 'tp' ? 'tp-card ' : ''}tlbar${min ? ' min' : ''}" id="${where === 'tp' ? 'tlBarTp' : 'tlBar'}" role="note" aria-label="تنبيه: الخط الزمني لأعمال الفصل التدريبي">${head}${min ? '' : items}</section>`;
+  }
+  function full(doc) {
+    if (!doc) return;
+    const p = picks(doc), groups = [];
+    p.all.forEach((x) => { let g = groups.find((y) => y.g === x.r.g); if (!g) groups.push(g = { g: x.r.g, rows: [] }); g.rows.push(x); });
+    const ov = document.createElement('div'); ov.className = 'tl-ov'; ov.dir = 'rtl';
+    ov.innerHTML = `<div class="tl-box" role="dialog" aria-modal="true" aria-label="${esc(doc.title || '')}"><div class="tlh"><span class="tli">${ICON}</span><div class="tlt"><b>${esc(doc.title || '')}</b><small>اليوم ${showD(days().day)}${doc.source ? ' • ' + esc(doc.source) : ''}</small></div><div class="tlb"><button class="btn s" data-tl="close">إغلاق</button></div></div>
+      <div class="tw tl-tw"><table class="tl-t"><thead><tr><th class="n">م</th><th>المهمة</th><th>الجهة المسؤولة</th><th>بداية الفترة</th><th>نهاية الفترة</th><th>الحالة</th></tr></thead><tbody>${groups.map((g) => `<tr class="tlg"><th colspan="6">${esc(g.g)}</th></tr>${g.rows.map(({ r, s }) => {
+        const one = r.one || (r.from && r.from === r.to) || (!r.from && !r.to);
+        const a = one ? `<td colspan="2" class="n">${r.from || r.to ? showD(r.from || r.to) : esc(r.note || '')}</td>` : `<td class="n">${r.from ? showD(r.from) : `<span class="tln">${esc(r.note || '')}</span>`}</td><td class="n">${showD(r.to)}</td>`;
+        return `<tr class="${s.k}"><td class="n">${r.n}</td><td>${esc(r.t)}${r.chk ? `<small class="tlc">${esc(r.chk)}</small>` : ''}</td><td>${esc(r.w || '')}</td>${a}<td>${badge(r, s)}</td></tr>`;
+      }).join('')}`).join('')}</tbody></table></div></div>`;
+    document.body.appendChild(ov);
+    const b = ov.querySelector('[data-tl="close"]'); if (b) b.focus();
+  }
+  const staffDoc = () => (typeof A !== 'undefined' && A.raw && A.raw.meta ? A.raw.meta.timeline : null);
+  const portalDoc = () => { const P = window.HAADER_PORTAL && window.HAADER_PORTAL.P; return P && P.data && P.data.meta ? P.data.meta.timeline : null; };
+  const docNow = () => (document.getElementById('tportal') ? portalDoc() : staffDoc());
+  function refresh() {
+    [['tlBar', 'staff', staffDoc], ['tlBarTp', 'tp', portalDoc]].forEach(([id, w, f]) => { const old = document.getElementById(id); if (!old) return; const h = bar(f(), w); if (h) old.outerHTML = h; else old.remove(); });
+  }
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest && ev.target.closest('[data-tl]');
+    if (!b) { if (ev.target.classList && ev.target.classList.contains('tl-ov')) ev.target.remove(); return; }
+    const k = b.dataset.tl, d = docNow();
+    if (k === 'all') full(d);
+    else if (k === 'close') { const o = b.closest('.tl-ov'); if (o) o.remove(); }
+    else if (k === 'min' || k === 'max') { ss.set('haader.tlMin', k === 'min' ? ((d && d.at) || '1') : ''); refresh(); }
+  });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { const o = document.querySelector('.tl-ov'); if (o) { o.remove(); ev.stopPropagation(); } } }, true);
+
+  /* كل الحسابات: أعلى كل واجهة في المنصة */
+  const baseRender = render;
+  render = function () {
+    const r = baseRender.apply(this, arguments);
+    try {
+      const main = document.getElementById('main');
+      if (main && A.me && !document.getElementById('tlBar')) { const h = bar(staffDoc(), 'staff'); if (h) main.insertAdjacentHTML('afterbegin', h); }
+    } catch (e) { /* العرض أولاً */ }
+    return r;
+  };
+  window.HAADER_TL = { bar, full, state, picks, today: () => days().day };
 })();
 
 /* ====================================================================

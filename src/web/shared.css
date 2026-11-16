@@ -8,3 +8,83 @@
 .wbtn.swtr{display:block;width:100%;margin:6px 0 4px;padding:7px 10px;border-radius:10px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;cursor:pointer}
 .wbtn.swtr.on{background:#F2B544;color:#1B2A3A;border-color:#F2B544}
 body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
+/* بوابة المتدرب (الويب، ومعاينتها من حساب المسؤول في النسختين) */
+.gspin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(127,127,127,.25);border-top-color:var(--pri,#0066CC);animation:gsp 0.9s linear infinite;margin:6px auto}
+@keyframes gsp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.gspin{animation:none}}
+#tportal{min-height:100vh;background:var(--bg,#F2F5F9);color:var(--ink,#12233A);font-family:Cairo,"Sakkal Majalla",Tahoma,sans-serif;display:flex;flex-direction:column}
+.tp-head{display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,#003366,#0066CC);color:#fff;flex-wrap:wrap}
+.tp-head .lgplate{background:#fff;border-radius:12px;padding:4px 8px;display:flex}.tp-head .lgplate img{height:34px}
+.tp-who{display:grid;flex:1;min-width:160px}.tp-who b{font-size:16px}.tp-who small{opacity:.85;font-size:12.5px}
+.tp-act{display:flex;gap:6px}.tp-act .btn{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.35)}
+.tp-main{width:min(860px,100%);margin:0 auto;padding:14px 16px 24px;display:grid;gap:12px;box-sizing:border-box;flex:1}
+.tp-card{background:var(--surface,#fff);border:1px solid var(--line,#D5DEE9);border-radius:16px;padding:14px 16px;box-shadow:0 2px 10px rgba(0,30,60,.05)}
+.tp-card h2{margin:0 0 6px;font-size:17px}.tp-card .sub{margin:4px 0;color:var(--ink2,#4A5D75);font-size:13px;line-height:1.8}
+.tp-card.bad{border-color:color-mix(in srgb,var(--bad,#B3261E) 50%,transparent)}
+.tp-qr{text-align:center}.tp-qr.ok{border:2px solid var(--ok,#0B7A5A)}.tp-qr.bad{border:2px solid var(--bad,#B3261E)}
+.tp-big{width:56px;height:56px;border-radius:50%;margin:4px auto 6px;display:grid;place-items:center;font-size:30px;font-weight:800;color:#fff;background:var(--ok,#0B7A5A)}
+.tp-qr.bad .tp-big{background:var(--bad,#B3261E)}.tp-st{font-size:18px;font-weight:800;margin:4px 0}
+.tp-ch{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.tp-kpi{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:10px 0}
+.tp-kpi div{border:1px solid var(--line,#D5DEE9);border-radius:12px;padding:8px;text-align:center;display:grid;gap:2px}
+.tp-kpi b{font-size:18px}.tp-kpi span{font-size:12px;color:var(--ink2,#4A5D75)}
+.tp-bar{position:relative;height:10px;border-radius:99px;background:color-mix(in srgb,var(--ink3,#6F8197) 18%,transparent);margin:6px 0}
+.tp-bar i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:99px;background:var(--ok,#0B7A5A)}
+.tp-bar i.warn{background:var(--warn,#B26A00)}.tp-bar i.bad{background:var(--bad,#B3261E)}
+.tp-bar em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--warn,#B26A00)}
+.tp-alerts{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.tp-alerts li{padding:8px 11px;border-radius:10px;border:1px solid var(--line,#D5DEE9);border-inline-start:4px solid var(--info,#0066CC);font-size:13.5px}
+.tp-alerts li.bad{border-inline-start-color:var(--bad,#B3261E)}.tp-alerts li.warn{border-inline-start-color:var(--warn,#B26A00)}
+.tp-course details{margin-top:6px}.tp-course summary{cursor:pointer;font-weight:700;font-size:13.5px}
+.tp-course table{width:100%;border-collapse:collapse;font-size:13px}.tp-course th,.tp-course td{padding:6px 8px;border-bottom:1px solid var(--line,#D5DEE9);text-align:start}
+.tp-foot{text-align:center;font-size:11.5px;color:var(--ink3,#6F8197);padding:10px}
+.tp-modal{position:fixed;inset:0;background:rgba(0,10,30,.5);display:grid;place-items:center;z-index:9999;padding:16px}
+.tp-modal .tp-card{width:min(400px,100%);display:grid;gap:10px}.tp-modal label{display:grid;gap:4px;font-size:13px}
+.tp-modal input{padding:10px 12px;border:1px solid var(--line,#D5DEE9);border-radius:10px;font:inherit}
+.tp-modal .err{color:var(--bad,#B3261E);font-size:13px}
+@media (max-width:620px){.tp-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.tp-kpi div:last-child{grid-column:span 2}.tp-head{padding:10px 12px}}
+.tp-org{display:grid;justify-items:center;gap:0}.tp-head .lgdept{color:#fff;font-size:12.5px;margin-top:4px}
+.tp-pv{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;justify-content:space-between;padding:9px 16px;background:linear-gradient(90deg,#3B2A86,#1F5AA6);color:#fff;font-size:13.5px;font-weight:700}
+.tp-pv .btn{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.45)}
+.tpv-list{display:grid;gap:4px;max-height:52vh;overflow:auto}.tpv-list button{all:unset;cursor:pointer;display:flex;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:10px;border:1px solid var(--line,#D5DEE9)}.tpv-list button:hover,.tpv-list button:focus-visible{border-color:var(--pri,#0066CC);background:color-mix(in srgb,var(--pri,#0066CC) 8%,transparent)}.tpv-list small{color:var(--ink3,#6F8197)}
+.tp-main{align-content:start}
+
+/* درجاتي في بوابة المتدرب */
+.tp-gt{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+.tp-gt th,.tp-gt td{padding:7px 9px;border-bottom:1px solid var(--line,#D5DEE9);text-align:start}
+.tp-gt thead th{font-size:12.5px;color:var(--ink2,#4A5D75);background:color-mix(in srgb,var(--line,#D5DEE9) 30%,transparent)}
+.tp-gt td.n,.tp-gt th.n{text-align:center;white-space:nowrap}
+.tp-gt tbody th{font-weight:600}
+.tp-gt small{color:var(--ink2,#4A5D75);font-size:11.5px}
+.tp-gt .tp-gx{color:var(--ink2,#4A5D75)}
+.tp-gt tr.sum th,.tp-gt tr.sum td{background:color-mix(in srgb,var(--brand,#0B5394) 7%,transparent)}
+.tp-gt tr.fin th,.tp-gt tr.fin td{border-top:2px solid var(--line,#D5DEE9)}
+.tp-gt tr.tot th,.tp-gt tr.tot td{font-size:14px}
+.tp-gp{display:block;font-style:normal;font-size:11px;color:var(--warn,#8A5A00)}
+.tp-gnote{border-radius:10px;padding:8px 10px;margin:8px 0;font-size:13px;background:color-mix(in srgb,var(--warn,#8A5A00) 10%,transparent)}
+
+/* الخط الزمني لأعمال الفصل التدريبي: تنبيه في كل الحسابات وبوابة المتدرب */
+.tlbar{border:1px solid color-mix(in srgb,var(--brand,#0B5394) 30%,var(--line,#D5DEE9));border-inline-start:4px solid var(--brand,#0B5394);border-radius:14px;padding:10px 14px;margin:0 0 14px;background:color-mix(in srgb,var(--brand,#0B5394) 5%,var(--surface,#fff));box-shadow:0 2px 10px rgba(0,30,60,.05)}
+.tlbar.min{padding:8px 12px}
+.tlh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tli svg{width:24px;height:24px;fill:none;stroke:var(--brand,#0B5394);stroke-width:1.8;stroke-linecap:round;display:block}
+.tlt{display:grid;gap:1px;flex:1 1 220px;min-width:0}.tlt b{font-size:14.5px;line-height:1.6}.tlt small{font-size:12px;color:var(--ink2,#4A5D75)}
+.tlb{display:flex;gap:6px;flex-wrap:wrap}
+.tll{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.tll li{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:10px;background:var(--surface,#fff);border:1px solid var(--line,#D5DEE9)}
+.tll li .chip{flex:none;white-space:nowrap}
+.tlx{display:grid;gap:1px;min-width:0}.tlx b{font-size:13.5px;font-weight:600;line-height:1.6}.tlx small{font-size:12px;color:var(--ink2,#4A5D75)}
+.tl-ov{position:fixed;inset:0;z-index:9999;background:rgba(10,20,35,.45);display:grid;place-items:center;padding:16px}
+.tl-box{background:var(--surface,#fff);color:var(--ink,#13233A);border-radius:16px;padding:14px;width:min(1000px,100%);max-height:calc(100vh - 32px);display:grid;grid-template-rows:auto 1fr;gap:10px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.tl-tw{overflow:auto;max-width:100%}
+.tl-t{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+.tl-t th,.tl-t td{padding:6px 8px;border-bottom:1px solid var(--line,#D5DEE9);text-align:start;vertical-align:top}
+.tl-t td.n,.tl-t th.n{text-align:center;white-space:nowrap}
+.tl-t thead th{position:sticky;top:0;background:var(--surface,#fff);font-size:12.5px;color:var(--ink2,#4A5D75)}
+.tl-t tr.tlg th{background:color-mix(in srgb,var(--brand,#0B5394) 12%,var(--surface,#fff));color:var(--brand,#0B5394);font-size:13.5px}
+.tl-t tr.now td{background:color-mix(in srgb,var(--warn,#8A5A00) 9%,transparent)}
+.tl-t tr.soon td{background:color-mix(in srgb,var(--brand,#0B5394) 5%,transparent)}
+.tl-t tr.done td{color:var(--ink2,#4A5D75)}
+.tl-t .tln{font-size:12px;color:var(--ink2,#4A5D75)}
+.tlc{display:block;font-size:11.5px;color:var(--warn,#8A5A00)}
+@media print{.tlbar,.tl-ov{display:none!important}}

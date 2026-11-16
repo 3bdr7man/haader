@@ -1,0 +1,10 @@
+/* مشترك بين النسختين: عين كلمة المرور، واسم القسم، ووضع المدرب لحساب المسؤول */
+.pwwrap{position:relative;display:block}.pwwrap input{width:100%;box-sizing:border-box;padding-left:46px!important}
+.pweye{position:absolute;left:4px;top:50%;transform:translateY(-50%);width:36px;height:36px;display:grid;place-items:center;border:0;background:transparent;color:inherit;opacity:.75;border-radius:8px;cursor:pointer;padding:0}
+.pweye:hover,.pweye:focus-visible{opacity:1;background:rgba(127,127,127,.16)}.pweye:focus-visible{outline:2px solid currentColor;outline-offset:1px}
+.pweye svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lgdept{margin:6px 2px 2px;text-align:center;font-size:13px;font-weight:700;line-height:1.5;color:inherit;opacity:.95}
+#side .lgdept{color:#EAF4FA}
+.wbtn.swtr{display:block;width:100%;margin:6px 0 4px;padding:7px 10px;border-radius:10px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;cursor:pointer}
+.wbtn.swtr.on{background:#F2B544;color:#1B2A3A;border-color:#F2B544}
+body.astr #side{box-shadow:inset -4px 0 0 #F2B544}

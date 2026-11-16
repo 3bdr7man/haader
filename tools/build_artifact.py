@@ -34,8 +34,12 @@ def rep(old, new, count=1):
     s = s.replace(old, new)
 
 
-rep('</style>\n<div id="gate"', '\n' + web('grades.css') + '\n' + web('theme-v2.css') + '</style>\n<div id="gate"')
-post = web('grades-web.js') + '\n' + web('grades-xl.js') + '\n' + web('theme-v2.js')
+# وضع المدرب لحساب المسؤول: يُخفي صلاحيات الإدارة في الواجهة (كما في الويب)
+rep("const isAdmin = () => !!(A.me && A.me.role === 'admin');", "const isAdmin = () => !!(A.me && A.me.role === 'admin' && !A.asTrainer);")
+rep("if (!A.me || A.me.role === 'admin' || A.me.role === 'viewer'", "if (!A.me || (A.me.role === 'admin' && !A.asTrainer) || A.me.role === 'viewer'")
+
+rep('</style>\n<div id="gate"', '\n' + web('shared.css') + '\n' + web('grades.css') + '\n' + web('theme-v2.css') + '</style>\n<div id="gate"')
+post = web('shared.js') + '\n' + web('grades-web.js') + '\n' + web('grades-xl.js') + '\n' + web('theme-v2.js')
 assert '</script' not in post
 rep('\nboot();\n', '\n' + post + '\nboot();\n')
 

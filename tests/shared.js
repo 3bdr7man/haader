@@ -1,0 +1,30 @@
+/* نسخة Claude: عين كلمة المرور في شاشة الدخول وتغيير كلمة المرور، واسم القسم، ووضع المدرب لحساب المسؤول */
+const L = require('./lib');
+let pass = 0, fail = 0;
+const ok = (c, n, x) => { if (c) { pass++; console.log('  ✓ ' + n); } else { fail++; console.log('  ✗ ' + n + (x !== undefined ? '  → ' + JSON.stringify(x).slice(0, 300) : '')); } };
+(async () => {
+  const b = await L.launch();
+  const docs = L.seed(); docs['accounts/uadmin'].username = 'aalkhathami';
+  const p = await L.open(b, 'admin', docs);
+  ok(await p.evaluate(() => (document.getElementById('sidedept') || {}).textContent === 'قسم الحاسب وتقنية المعلومات'), 'اسم القسم تحت شعار المؤسسة');
+  ok(await p.evaluate(() => !!document.querySelector('#who [data-act="as-trainer"]')), 'زر «الدخول بحسابي كمدرب» لصاحب المنصة');
+  await p.click('#who [data-act="as-trainer"]');
+  ok(await p.evaluate(() => A.asTrainer === true && !isAdmin() && document.body.classList.contains('astr')), 'وضع المدرب يُخفي صلاحيات الإدارة');
+  await p.click('#who [data-act="as-trainer"]');
+  ok(await p.evaluate(() => A.asTrainer === false && isAdmin()), 'العودة لحساب المسؤول');
+  await p.evaluate(() => ACT['change-pw'] ? ACT['change-pw']() : null); await p.waitForTimeout(200);
+  ok(await p.evaluate(() => document.querySelectorAll('#modal .pweye').length >= 2), 'عين كلمة المرور في نافذة تغيير كلمة المرور');
+  await p.evaluate(() => closeModal());
+  await p.evaluate(() => ACT.logout()); await p.waitForTimeout(400);
+  const g = await p.evaluate(() => { const i = document.querySelector('#gate input[type=password]'); return { has: !!i, eye: !!(i && i.parentNode.querySelector('.pweye')) }; });
+  ok(g.has && g.eye, 'عين كلمة المرور في شاشة الدخول', g);
+  await p.fill('#gate input[type=password]', 'Secret-123');
+  await p.click('#gate .pweye');
+  ok(await p.evaluate(() => { const i = document.querySelector('#gate .pwwrap input'); return i.type === 'text' && i.value === 'Secret-123'; }), 'الضغط على العين يُظهر كلمة المرور');
+  await p.click('#gate .pweye');
+  ok(await p.evaluate(() => document.querySelector('#gate .pwwrap input').type === 'password'), 'والضغط ثانية يخفيها');
+  await p.screenshot({ path: __dirname + '/out/artifact-gate-eye.png' });
+  ok(!p.errs.length, 'لا أخطاء JavaScript', p.errs.slice(0, 4));
+  await b.close();
+  console.log(`\n══ الطبقة المشتركة في نسخة Claude: ${pass} ناجح، ${fail} فاشل ══`); process.exit(fail ? 1 : 0);
+})().catch((e) => { console.error('FATAL', e); process.exit(1); });

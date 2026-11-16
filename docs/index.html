@@ -956,7 +956,7 @@ body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
 </div>
 <div id="toast" role="status" dir="rtl" hidden></div>
 <div id="tip" dir="rtl" hidden></div>
-<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="ae57b4deaa17";</script>
+<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="e56a1a16790f";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 /* ====================================================================
@@ -2864,8 +2864,13 @@ async function qrReview(items, src) {
   if (!A.raw.meta.qrkey) { toast('لم تُفتح أي جلسة QR بعد.'); return; }
   const res = await qrCheck(items); A.qrRes = res;
   const sname = (x) => (x.crn && A.m.secBy[x.crn] ? secLabel(A.m.secBy[x.crn]) : '—');
+  /* أحدث رد في الملف، والجلسات التي بدأت بعده: ردودها ليست في هذا الملف */
+  const lastT = items.reduce((m, x) => { const t = Date.parse(x.t || x.s); return t > m ? t : m; }, 0);
+  const later = lastT ? Object.values(A.raw.qrs || {}).filter((q) => mayEdit(q.crn) && Date.parse(q.start) > lastT).sort((x, y) => String(y.start).localeCompare(String(x.start))) : [];
+  const stale = later.length ? `<div class="gnote warn"><b>ردود جلسات لاحقة ليست في هذا الملف.</b> أحدث رد فيه: ${esc(dt(new Date(lastT).toISOString()))}. والجلسات التالية بدأت بعده فلا يمكن اعتمادها منه: ${later.slice(0, 6).map((q) => `${esc(sname(q))} — ${q.d} (${hm(q.start).slice(0, 5)})`).join('، ')}. نزّل نسخة جديدة من ردود النموذج من Forms («فتح في Excel» بعد انتهاء التحضير) ثم ارفعها.</div>` : '';
   modal(`<h2>مراجعة ردود التحضير</h2><div class="sub">المصدر: ${esc(src)} • ${items.length} رداً • سبق معالجته: ${res.old}${res.again ? ` • أُعيد فحص ${res.again} رداً رُفض سابقاً فقُبل` : ''}${res.other ? ` • لشعب مدربين آخرين: ${res.other}` : ''}${res.foreign ? ` • ليست ردود تحضير: ${res.foreign}` : ''}</div>
   <div class="tiles"><div class="tile ok"><b>${res.ok.length}</b><span>مقبول</span></div><div class="tile bad"><b>${res.bad.length}</b><span>مرفوض</span></div></div>
+  ${stale}
   ${res.ok.length ? `<h3>المقبول</h3><div class="tw" style="max-height:220px"><table><thead><tr><th>المتدرب</th><th>الشعبة</th><th class="n">المحاضرة</th><th class="n">وقت المسح</th><th>الحالة</th></tr></thead><tbody>${res.ok.map((x) => `<tr><td>${esc(x.nm)} <small class="sub">${x.id}</small></td><td>${esc(sname(x))}</td><td class="n">${x.d}</td><td class="n">${hm(x.o || x.t)}</td><td>${x.late ? `<span class="chip ${x.late > A.m.s.lateLimit ? 'bad' : 'warn'}">${qrLateText(x.late)}</span>` : '<span class="chip ok">حاضر</span>'}${x.again ? ' <span class="chip info">رُفض سابقاً</span>' : ''}${x.typo ? ` <span class="chip warn" title="الهوية من حساب المؤسسة">كتب ${esc(x.typo)}</span>` : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
   ${res.bad.length ? `<h3>المرفوض</h3><div class="tw" style="max-height:220px"><table><thead><tr><th>المتدرب</th><th>الشعبة</th><th class="n">الوقت</th><th>السبب</th></tr></thead><tbody>${res.bad.map((x) => `<tr><td>${esc(x.nm || x.e || '—')} <small class="sub">${x.id || ''}</small></td><td>${esc(sname(x))}</td><td class="n">${hm(x.o || x.t)}</td><td>${esc(WHY[x.why])}</td></tr>`).join('')}</tbody></table></div>` : ''}
   <div class="sub">يُسجَّل المقبول «ح»، أو «م» بعدد دقائق التأخير من بداية المحاضرة لمن مسح بعد ${qrCfg().lateGrace} دقائق من بدايتها (أو من بدء الجلسة إن بدأت متأخرة)، إذا كانت خانته فارغة أو «غ». ويبقى أي تسجيل آخر كما هو. تُحفظ أسباب الرفض في سجل الجلسة.</div>
@@ -2883,7 +2888,7 @@ function qrApply() {
     if (x.again && x.rid) P(x.sid).rej[x.rid] = { acc: { by: A.me.id, on: iso, auto: true } };
   });
   res.bad.filter((x) => x.sid && A.raw.qrs[x.sid] && mayEdit(A.raw.qrs[x.sid].crn)).forEach((x) => { P(x.sid).rej[x.rid || 'n' + rnd(6)] = { id: x.id || '', typed: x.typed, e: x.e, at: x.t, opened: x.o, why: x.why, on: iso, by: A.me.id }; });
-  Object.entries(by).forEach(([sid, p]) => { qrPatch(sid, p); const a = Object.keys(p.ins).length, b = Object.keys(p.rej).length; qrLog(sid, 'اعتماد الردود', `${a} حضور، ${b} مرفوض`); qrAudit(A.raw.qrs[sid], 'اعتماد الردود', `${a} حضور، ${b} مرفوض`); });
+  Object.entries(by).forEach(([sid, p]) => { qrPatch(sid, p); const a = Object.keys(p.ins).length, b = Object.values(p.rej).filter((x) => !x.acc).length; qrLog(sid, 'اعتماد الردود', `${a} حضور، ${b} مرفوض`); qrAudit(A.raw.qrs[sid], 'اعتماد الردود', `${a} حضور، ${b} مرفوض`); });
   closeModal();
   if (marks.length) setMarks(marks, 'QR'); else render(true);
   toast(`اعتُمد ${res.ok.length} حضوراً عبر QR.`);

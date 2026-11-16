@@ -21,6 +21,7 @@ const review = (p) => p.evaluate(async (b64) => { const bin = atob(b64), u = new
   ok(r1.ok === 28 && r1.again === 28 && r1.bad === 0, 'يُعاد فحص الردود المرفوضة سابقاً فيُقبل 28 رداً', r1);
   ok(r1.rev === 13, 'ردود فُتحت قبل إلغاء الرمز تُقبل (13)', r1.rev);
   ok(r1.typo >= 9, 'الرقم المكتوب خطأً لا يُسقط الحضور ويُذكر', r1.typo);
+  ok(/ردود جلسات لاحقة ليست في هذا الملف/.test(r1.txt) && /74307|06\/06\/1448/.test(r1.txt), 'تنبيه: جلسات بدأت بعد أحدث رد في الملف (مثل 74307 اليوم)', r1.txt.slice(0, 600));
   ok(/أُعيد فحص 28 رداً/.test(r1.txt) && /رُفض سابقاً/.test(r1.txt), 'المراجعة تبيّن ذلك', r1.txt.slice(0, 200));
   await p.click('#modal [data-act="qr-apply"]'); await L.flush(p);
   const d = await L.dbDocs(p);

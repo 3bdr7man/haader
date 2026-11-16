@@ -86,7 +86,7 @@ if (document.getElementById('shell')) (() => {
     if (!A.me) return;
     const me = A.me, mine = Object.values(A.raw.sections || {}).filter((s) => s.trainer === me.id).length;
     const acts = [...document.querySelectorAll('#who [data-act]')].filter((b) => b.dataset.act !== 'logout').map((b) => `<button class="btn" data-act="${esc(b.dataset.act)}">${esc(b.textContent.trim())}</button>`).join('');
-    const rows = [['اسم المستخدم', `<span dir="ltr">${esc(me.username || '')}</span>`], ['القسم', esc(me.dept || DEPT)], ['الجهة', esc(COLLEGE)], mine ? ['الشعب المسندة', String(mine)] : null, me.lastLogin ? ['آخر دخول', esc(fmtDT(me.lastLogin))] : null].filter(Boolean);
+    const rows = [['اسم المستخدم', `<span dir="ltr">${esc(me.username || '')}</span>`], ['البريد الإلكتروني', me.email ? `<span dir="ltr">${esc(me.email)}</span>` : 'غير مسجل'], ['القسم', esc(me.dept || DEPT)], ['الجهة', esc(COLLEGE)], mine ? ['الشعب المسندة', String(mine)] : null, me.lastLogin ? ['آخر دخول', esc(fmtDT(me.lastLogin))] : null].filter(Boolean);
     const v2 = document.documentElement.getAttribute('data-look') === 'v2';
     prof.innerHTML = `<div class="pf-h"><span class="v2-ava">${esc(initial())}</span><div><b>${esc(me.name || '')}</b><small>${esc(roleLabel())}</small></div><button class="pf-x" data-v2close aria-label="إغلاق">✕</button></div>
       <dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>

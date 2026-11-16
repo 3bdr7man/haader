@@ -8,6 +8,8 @@
 .wbtn.swtr{display:block;width:100%;margin:6px 0 4px;padding:7px 10px;border-radius:10px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;cursor:pointer}
 .wbtn.swtr.on{background:#F2B544;color:#1B2A3A;border-color:#F2B544}
 body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
+/* زر «بريدي الإلكتروني» في بطاقة الحساب: في الجوال يُخفى من الشريط كزر كلمة المرور، ويبقى في نافذة الملف الشخصي */
+@media (max-width:860px){#who [data-act=email-edit]{display:none}}
 /* بوابة المتدرب (الويب، ومعاينتها من حساب المسؤول في النسختين) */
 .gspin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(127,127,127,.25);border-top-color:var(--pri,#0066CC);animation:gsp 0.9s linear infinite;margin:6px auto}
 @keyframes gsp{to{transform:rotate(360deg)}}

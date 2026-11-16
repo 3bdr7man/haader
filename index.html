@@ -3118,7 +3118,7 @@ function pledgeHTML(id, l) {
   <tr><td>${FF('tn', p.n)}</td><td>${FF('ti', id || '')}</td><td>${FF('sp', p.sp || '')}</td><td rowspan="3" style="vertical-align:middle">${FF('sg', '')}</td></tr>
   <tr><td class="g">المقرر</td><td class="g" style="font-size:12px;white-space:nowrap">الشعبة: نظري ( ${FC('kn', kind === 'نظري', 'kd')} ) عملي ( ${FC('kw', kind === 'عملي', 'kd')} )</td><td class="g">رقم الشعبة</td></tr>
   <tr><td>${FF('cr', l ? l.sec.course : '')}</td><td></td><td>${FF('cn', l ? l.sec.crn : '')}</td></tr></table>
-  <div class="ps"><div><b>رئيس القسم</b><br>${FF('hd', s.head || '')}</div><div><b>مدرب المقرر</b><br>${FF('tr', tr ? 'م. ' + tr.replace(/^م\.\s*/, '') : '')}</div></div>`;
+  <div class="ps"><div><b>رئيس القسم</b><br>${FF('hd', s.head || orgInfo().head || '')}</div><div><b>مدرب المقرر</b><br>${FF('tr', tr ? 'م. ' + tr.replace(/^م\.\s*/, '') : '')}</div></div>`;
 }
 
 /* المحرر: نافذة كاملة فوق المنصة، تُحرَّر فيها الحقول وتُطبع مباشرة أو تُنزَّل للطباعة */

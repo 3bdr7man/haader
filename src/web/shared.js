@@ -3,6 +3,8 @@
    - إظهار كلمة المرور وإخفاؤها في كل خانة كلمة مرور
    - اسم القسم تحت شعار المؤسسة في القائمة الجانبية
    - الدخول بحساب المدرب من حساب المسؤول (لصاحب المنصة وحده)
+   - البريد الإلكتروني للمدرب ورئيس القسم: يُعدَّل من المنصة ويُحفظ في قاعدة بياناتها،
+     ولا يُكتب أي بريد في الشيفرة
    ==================================================================== */
 if (document.getElementById('shell')) (() => {
   const WEB = window.HAADER_WEB || null;
@@ -73,5 +75,69 @@ if (document.getElementById('shell')) (() => {
     document.body.classList.toggle('astr', !!A.asTrainer);
     try { deptLine(); } catch (e) { /* العرض أولاً */ }
     return r;
+  };
+
+  /* ---------- البريد الإلكتروني للمدرب ورئيس القسم ----------
+     لا يُكتب أي بريد في الشيفرة: كل بريد يُدخله صاحبه أو المسؤول من المنصة، ويُحفظ في قاعدة بياناتها.
+     - المسؤول: خانة «البريد الإلكتروني» في نموذج الحساب (مدرب، رئيس قسم، اطلاع، مسؤول)
+     - كل مستخدم: زر «بريدي الإلكتروني» في بطاقة الحساب، ويظهر كذلك في نافذة الملف الشخصي
+     - رئيس القسم: خانة بريده في «القسم والتخصصات»، يُرفض فيها البريد غير الصحيح، ويُنبَّه إن كانت فارغة */
+  const emailOk = (v) => !v || EMAIL_RE.test(v);
+
+  /* خانة البريد في نموذج الحساب، بعد اسم المستخدم */
+  const baseUserForm = userForm;
+  userForm = function (u) {
+    baseUserForm.apply(this, arguments);
+    const un = $('#uU'), host = un && un.closest('label');
+    if (!host || $('#uE')) return;
+    const lab = document.createElement('label');
+    lab.innerHTML = 'البريد الإلكتروني (اختياري)<input type="email" id="uE" dir="ltr" inputmode="email" autocomplete="off">';
+    lab.querySelector('input').value = (u && u.email) || '';
+    host.insertAdjacentElement('afterend', lab);
+  };
+  const baseSaveUser = SUBMIT.saveUser;
+  SUBMIT.saveUser = async function () {
+    const el = $('#uE');
+    if (!el) return baseSaveUser.apply(this, arguments);
+    const v = el.value.trim();
+    if (!emailOk(v)) { toast('اكتب بريداً إلكترونياً صحيحاً، أو اترك الخانة فارغة.'); el.focus(); return; }
+    const id0 = A.editUser, before = id0 ? A.raw.accounts[id0] : null, known = new Set(Object.keys(A.raw.accounts || {}));
+    await baseSaveUser.apply(this, arguments);
+    /* الحساب الذي حُفظ فعلاً: المعدَّل إن تبدّل كائنه، أو الجديد الذي لم يكن موجوداً. وإلا فالحفظ لم يتم (رسالة تحقق) */
+    const acc = id0 ? A.raw.accounts[id0] : Object.values(A.raw.accounts || {}).find((x) => !known.has(x.id));
+    if (!acc || acc === before || (acc.email || '') === v) return;
+    acc.email = v;
+    if (A.me && A.me.id === acc.id) A.me.email = v;
+    /* يُضاف إلى كتابة الحساب المنتظرة نفسها إن وُجدت، فيُحفظ الحساب ببريده في كتابة واحدة */
+    const pend = Q.find((q) => !q.busy && q.op === 'set' && q.path === 'accounts/' + acc.id);
+    if (pend) pend.patch.email = v; else enqueue('accounts/' + acc.id, { email: v });
+    render(true);
+  };
+
+  /* زر «بريدي الإلكتروني» في بطاقة الحساب: لكل من يملك حساباً غير حساب الاطلاع */
+  const navBeforeEmail = buildNav;
+  buildNav = function () {
+    navBeforeEmail();
+    const row = $('#who .row');
+    if (!row || !A.me || isViewer() || row.querySelector('[data-act="email-edit"]')) return;
+    const b = document.createElement('button'); b.className = 'wbtn'; b.dataset.act = 'email-edit'; b.textContent = 'بريدي الإلكتروني';
+    const pw = row.querySelector('[data-act="change-pw"]');
+    if (pw) pw.insertAdjacentElement('afterend', b); else row.insertAdjacentElement('afterbegin', b);
+  };
+
+  /* بريد رئيس القسم في «القسم والتخصصات» */
+  const baseOrgF = CHG['org-f'];
+  CHG['org-f'] = function (e) {
+    if (e.dataset.k === 'headEmail' && !emailOk(e.value.trim())) { toast('اكتب بريداً إلكترونياً صحيحاً لرئيس القسم، أو اترك الخانة فارغة.'); render(true); return; }
+    baseOrgF.apply(this, arguments);
+    toast('حُفظت بيانات القسم.');
+  };
+  const baseOrgView = VIEWS.org;
+  VIEWS.org = function () {
+    const h = baseOrgView.apply(this, arguments), o = orgInfo();
+    const miss = [!o.head && 'اسم رئيس القسم', !o.headEmail && 'بريد رئيس القسم'].filter(Boolean);
+    const note = `<div class="sub" id="orgMailNote" style="margin-top:8px">${miss.length ? `<span class="chip warn">لم يُسجَّل بعد: ${miss.join(' و')}</span> ` : ''}يُحفظ اسم رئيس القسم وبريده في قاعدة بيانات المنصة، ويُضاف بريده نسخةً (CC) في إشعارات الغياب. ويعدّل كل مدرب بريده من «بريدي الإلكتروني» في بطاقة حسابه، ويعدّله المسؤول من «المدربون والصلاحيات».</div>`;
+    const mark = 'data-k="headEmail"></label></div>';
+    return h.includes(mark) ? h.replace(mark, mark + note) : h + note;
   };
 })();

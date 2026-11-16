@@ -954,7 +954,7 @@ body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
 </div>
 <div id="toast" role="status" dir="rtl" hidden></div>
 <div id="tip" dir="rtl" hidden></div>
-<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="83a8129e672e";</script>
+<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="9270b965ee62";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 /* ====================================================================
@@ -7167,11 +7167,21 @@ if (document.getElementById('shell')) (() => {
   Object.assign(GACT, { tpl: 'تنزيل نموذج الدرجات', undo: 'تراجع عن استيراد' });
 
   /* ---------- نافذة الإدخال: الأزرار وسجل الاستيراد ---------- */
+  function distPanel(sec) {
+    const its = sec.items || {}, st = G.stats(sec, gMarks(sec.crn));
+    const rows = G.comps(sec).map((c) => `<tr><td class="n"><b>${esc(c.k)}</b></td><td>${esc(c.desc || '')}</td><td class="n">${esc(c.part || '')}</td><td class="n"><b>${G.fmt(c.max)}</b></td><td class="n">${esc(c.mustPass || '')}</td><td>${its[c.k] ? its[c.k].map((x) => `${esc(x.n)} <b>${G.fmt(x.max)}</b>`).join(' + ') : '—'}</td></tr>`).join('');
+    return `<section class="panel gdist"><div class="row between"><h2 style="margin:0">توزيع درجات المقرر — ${esc(sec.code || '')} ${esc(sec.name || '')}</h2><span class="sub">المعتمد في رايات${Object.keys(its).length ? '، وبنود أعمال السنة تُجمع في مكوّنها ويُرفع المجموع وحده' : ''}</span></div>
+      <div class="tw"><table><thead><tr><th class="n">المكوّن</th><th>الوصف</th><th class="n">الجزء</th><th class="n">الدرجة القصوى</th><th class="n">يجب الاجتياز</th><th>البنود التفصيلية</th></tr></thead><tbody>${rows}<tr class="tot"><td class="n">المجموع</td><td></td><td class="n"></td><td class="n">${G.fmt(G.total(sec))}</td><td></td><td></td></tr></tbody></table></div>
+      ${st.have ? '' : `<div class="gnote info">لم تُدخل درجات لهذه الشعبة بعد: ${st.need} درجة مطلوبة لـ${st.elig != null ? st.elig : (sec.rows || []).filter((r) => r.el).length} متدرباً قابلاً للرصد. أدخلها في الجدول أدناه، أو نزّل نموذج إدخال الدرجات Excel وارفعه بعد التعبئة.</div>`}</section>`;
+  }
   const baseEntry = VIEWS.gentry;
   VIEWS.gentry = () => {
     let h = baseEntry(), crn = '';
     h = h.replace(/<label class="btn s">استيراد الدرجات من Excel<input type="file" accept="\.xlsx" hidden data-change="g-xin" data-crn="(\d+)"><\/label>/, (m0, c) => { crn = c; return `<button class="btn s p" data-act="gx-tpl">تحميل نموذج إدخال الدرجات Excel</button><button class="btn s" data-act="gx-imp" data-crn="${c}">استيراد درجات Excel</button>`; });
     if (!crn) { const sec = A.gCrn && A.raw.gsec[A.gCrn]; if (sec && gList(sec.crn)) crn = sec.crn; }
+    /* توزيع درجات المقرر (المعتمد وبنود أعمال السنة) فوق جدول المتدربين */
+    const dsec = crn && A.raw.gsec[crn];
+    if (dsec) h = h.replace('<section class="panel"><div class="row between"><h2 style="margin:0">جدول المتدربين', (m0) => distPanel(dsec) + m0);
     if (crn && (gMay(crn) || isAdmin() || isHead())) { h += `<section class="panel" id="gxHist" data-crn="${crn}"><div class="row between"><h2 style="margin:0">سجل استيراد الدرجات — الشعبة ${crn}</h2><span class="sub">كل عملية بقيمها القديمة والجديدة، ويمكن التراجع عنها ما لم تُعدَّل الدرجات بعدها.</span></div><div class="gxh-body">${histHtml(crn)}</div></section>`; setTimeout(() => loadHist(crn), 0); }
     return h;
   };

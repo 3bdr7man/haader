@@ -3,7 +3,7 @@
    للبطاقات الإحصائية، وظهور تدريجي عند تغيير الصفحة، وتدرج للرسوم البيانية.
    لا يغيّر أي وظيفة: يضيف عناصر عرض فقط، ويُلغى كله من «المظهر المطوّر».
    ==================================================================== */
-if (window.HAADER_WEB) (() => {
+if (document.getElementById('shell')) (() => {
   const KEY = 'haader.look';
   const getLook = () => { try { return localStorage.getItem(KEY) || 'v2'; } catch (e) { return 'v2'; } };
   const setLook = (v) => { try { localStorage.setItem(KEY, v); } catch (e) { /* تفضيل للعرض فقط */ } document.documentElement.setAttribute('data-look', v); };

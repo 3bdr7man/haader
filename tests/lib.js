@@ -74,7 +74,7 @@ async function open(browser, who, docs, opts = {}) {
   const acc = ACC[who];
   await page.addInitScript(({ seedDocs, uid, sid, level }) => { window.__SEED = seedDocs; window.__UID = uid; window.__LEVEL = level; try { sessionStorage.setItem('haader.s', JSON.stringify({ id: sid, exp: Date.now() + 3600e3 })); } catch (e) { /* */ } }, { seedDocs: docs, uid: opts.uid === undefined ? 'cu_' + acc.id : opts.uid, sid: acc.id, level: opts.level || 'admin' });
   await page.addInitScript(MOCK);
-  await page.goto('file://' + (opts.file || ROOT + '/index.html'));
+  await page.goto('file://' + (opts.file || process.env.HAADER_FILE || ROOT + '/index.html'));
   await page.waitForFunction(() => typeof A !== 'undefined' && A.me && A.m && A.m.sections && A.m.sections.length && A.got.gsec && A.got.gmarks, null, { timeout: 15000 });
   page.errs = errs; page.ctx = ctx;
   return page;

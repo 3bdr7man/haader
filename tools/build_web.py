@@ -26,7 +26,7 @@ def rep(old, new, count=1):
 
 
 # 1) الأنماط
-rep('</style>\n<div id="gate"', '\n' + web('web.css') + '\n' + web('theme-v2.css') + '</style>\n<div id="gate"')
+rep('</style>\n<div id="gate"', '\n' + web('web.css') + '\n' + web('grades.css') + '\n' + web('theme-v2.css') + '</style>\n<div id="gate"')
 
 # 2) رابط QR وتعليماته: المتدرب يدخل برقمه التدريبي فيُسجَّل حضوره مباشرة
 rep('const qrUrl = (code) => { const f = qrCfg().form;',

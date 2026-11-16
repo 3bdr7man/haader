@@ -714,6 +714,8 @@ tr.gds td{border-top:2px solid var(--gl-line,var(--line))}
 body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
 
 /* استيراد الدرجات من Excel */
+
+/* خيارات استيراد درجات Excel (مشترك بين نسخة الويب ونسخة Claude) */
 .gxopt{display:grid;gap:10px;margin:14px 0}
 .gxopt .ck{display:flex;gap:8px;align-items:center}
 
@@ -952,7 +954,7 @@ body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
 </div>
 <div id="toast" role="status" dir="rtl" hidden></div>
 <div id="tip" dir="rtl" hidden></div>
-<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="8a964ae851ef";</script>
+<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="83a8129e672e";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 /* ====================================================================
@@ -6722,7 +6724,8 @@ if (window.HAADER_WEB) (() => {
    - درجة المكوّن المرفوعة إلى رايات = مجموع بنوده (أو قيمة عمود المكوّن إن
      لم تكن له بنود). كل بند يُتحقق منه: رقم، غير سالب، لا يتجاوز حده، خانتان.
    ==================================================================== */
-if (window.HAADER_WEB) (() => {
+if (document.getElementById('shell')) (() => {
+  const WEB = !!window.HAADER_WEB;
   const norm = (s) => String(s == null ? '' : s).replace(/[ً-ْـ]/g, '').replace(/\s+/g, ' ').trim();
   const cellOf = (v) => (v === null || v === undefined ? '' : String(v).trim());
   const hidx = (hdr, names) => { const h = hdr.map(norm); for (const n of names) { const i = h.indexOf(norm(n)); if (i >= 0) return i; } return -1; };
@@ -6844,6 +6847,111 @@ if (window.HAADER_WEB) (() => {
     return { v, bad, miss, total: miss.length || bad.length ? null : r2(its.reduce((t, it) => t + v[it.n], 0)) };
   }
   const subOf = (crn) => ((A.raw.gmarks[crn] || {}).s) || {};
+
+  /* ---------- خلفية الحفظ ----------
+     نسخة الويب: دوال الخادم (grades_import وgrades_import_undo وgrades_imports) تتحقق وتحفظ وتسجّل.
+     نسخة Claude: المنطق نفسه في الصفحة، والحفظ عبر gSetGrades (بسجله وحارس الاعتماد)، وسجل العمليات
+     في مجموعة gimp داخل قاعدة بيانات المنصة، لتبقى النسختان بالسلوك والرسائل نفسها. */
+  const LB = (() => {
+    const isoNow = () => new Date().toISOString();
+    const rid = (crn) => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return `GI${String(d.getUTCFullYear()).slice(2)}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}-${crn}-${Math.random().toString(16).slice(2, 6)}`; };
+    const fail = (m) => { throw new Error(m); };
+    async function imp(a) {
+      const crn = a.p_crn, sec = A.raw.gsec[crn], wb = a.p_wb || {}, me = A.me.id;
+      if (!gMay(crn)) fail(`الشعبة ${crn} غير مسندة إليك، فلا تُستورد درجاتها.`);
+      if (!sec) fail('الشعبة غير موجودة في قاعدة بيانات الدرجات.');
+      const gate = gGate(crn); if (gate) fail(gate);
+      if (wb.id) {
+        if ((wb.term || '') !== (sec.term || '')) fail(`هذا المصنف للفصل «${wb.term}» والشعبة ${crn} مسجلة في «${sec.term}». نزّل نموذجاً جديداً من المنصة.`);
+        if ((wb.trainer || '') !== me) fail('هذا المصنف أُنشئ لحساب مدرب آخر، فلا تُستورد منه درجات بحسابك.');
+        if (!(wb.crns || []).includes(crn)) fail(`الشعبة ${crn} ليست ضمن شعب هذا المصنف.`);
+      }
+      const marks = gMarks(crn), oldS = subOf(crn), bad = [], vals = [], subsOld = {}, subsNew = {};
+      const rowOf = (id) => sec.rows.find((r) => r.id === id);
+      Object.entries(a.p_items || {}).forEach(([tid, kv]) => {
+        const row = rowOf(tid);
+        if (!row) { bad.push({ id: tid, msg: `الرقم التدريبي ${tid} غير موجود في الشعبة ${crn}.` }); return; }
+        if (!row.el) { bad.push({ id: tid, msg: `${row.name}: غير قابل للرصد (${row.st || ''})، فلم تُستورد درجاته.` }); return; }
+        Object.entries(kv).forEach(([k, sv]) => {
+          const its = (sec.items || {})[k], cp = G.compBy(sec, k);
+          if (!its) { bad.push({ id: tid, k, msg: `${row.name}: المكوّن ${k} بلا بنود في التوزيع المعتمد.` }); return; }
+          if (!cp) { bad.push({ id: tid, k, msg: `المكوّن ${k} غير معتمد في توزيع الشعبة ${crn}.` }); return; }
+          if (r2(its.reduce((t, x) => t + x.max, 0)) !== cp.max) { bad.push({ id: tid, k, msg: `مجموع حدود بنود ${k} لا يساوي حدها المعتمد ${cp.max}.` }); return; }
+          const x = compFromItems(its, k, sv);
+          if (x.bad.length) { x.bad.forEach((b) => bad.push({ id: tid, k, msg: `${row.name}: ${b}` })); return; }
+          if (!Object.keys(x.v).length) return;
+          (subsOld[tid] = subsOld[tid] || {})[k] = ((oldS[tid] || {})[k]) || null;
+          (subsNew[tid] = subsNew[tid] || {})[k] = x.v;
+          if (x.total === null) bad.push({ id: tid, k, msg: `${row.name}: بنود ${k} ناقصة (${its.length - x.miss.length} من ${its.length})، فحُفظت البنود ولم تُحسب درجة ${k}.` });
+          else vals.push({ id: tid, k, v: x.total });
+        });
+      });
+      (a.p_rows || []).forEach((r) => { if ((sec.items || {})[r.k]) bad.push({ id: r.id, k: r.k, msg: `درجة ${r.k} تُحسب من بنودها، فلا تُستورد مباشرة.` }); else vals.push(r); });
+      const seen = {}, list = [], changes = []; let nAdd = 0, nChg = 0, nSame = 0, nKept = 0;
+      vals.forEach((r) => {
+        if (isEmpty(r.v)) return;
+        const key = r.id + '|' + r.k; if (seen[key]) { bad.push({ id: r.id, k: r.k, msg: `الرقم التدريبي ${r.id} مكرر في المكوّن ${r.k}.` }); return; } seen[key] = 1;
+        const row = rowOf(r.id);
+        if (!row) { bad.push({ id: r.id, k: r.k, msg: `الرقم التدريبي ${r.id} غير موجود في الشعبة ${crn}.` }); return; }
+        if (!row.el) { bad.push({ id: r.id, k: r.k, msg: `${row.name}: غير قابل للرصد (${row.st || ''}).` }); return; }
+        const c = G.check(sec, r.k, r.v);
+        if (!c.ok) { bad.push({ id: r.id, k: r.k, msg: `${row.name}: ${c.msg}` }); return; }
+        const old = G.val(marks, r.id, r.k);
+        if (old !== null && old === c.v) { nSame++; return; }
+        if (old !== null && !a.p_overwrite) { nKept++; return; }
+        if (old === null) nAdd++; else nChg++;
+        changes.push([r.id, r.k, old, c.v]); list.push({ id: r.id, k: r.k, raw: c.v });
+      });
+      const out = { id: null, add: 0, chg: 0, same: nSame, kept: nKept, bad, changes: [], s: {} };
+      if (!list.length && !Object.keys(subsNew).length) return out;
+      const id = rid(crn), at = isoNow();
+      if (list.length) {
+        const res = gSetGrades(crn, list, 'استيراد Excel ' + id);
+        if (res.gate) fail(res.gate);
+        res.bad.forEach((b) => { bad.push({ id: b.id, k: b.k, msg: b.msg }); const i = changes.findIndex((c) => c[0] === b.id && c[1] === b.k); if (i >= 0) { if (changes[i][2] === null) nAdd--; else nChg--; changes.splice(i, 1); } });
+      }
+      if (Object.keys(subsNew).length) {
+        A.raw.gmarks[crn] = merge(clone(A.raw.gmarks[crn] || { g: {}, t: {} }), { s: clone(subsNew) });
+        enqueue('gmarks/' + crn, { s: subsNew });
+      }
+      gPutDoc('gimp', id, { id, crn, at, by: A.me.id, byName: A.me.name || '', file: String(a.p_file || '').slice(0, 200), wb: a.p_wb || {}, overwrite: !!a.p_overwrite, add: nAdd, chg: nChg, same: nSame, kept: nKept, nbad: bad.length, changes, subs: subsOld, subsNew, bad: bad.slice(0, 300), status: 'done' });
+      return { id, add: nAdd, chg: nChg, same: nSame, kept: nKept, bad, changes, s: subsNew, at, by: A.me.id };
+    }
+    async function undo(id) {
+      const gi = (A.raw.gimp || {})[id]; if (!gi) fail('عملية الاستيراد غير موجودة.');
+      if (!gMay(gi.crn)) fail(`لا يملك هذا الحساب التراجع عن استيراد الشعبة ${gi.crn}.`);
+      if (gi.status === 'undone') fail('تم التراجع عن هذه العملية من قبل.');
+      const gate = gGate(gi.crn); if (gate) fail(gate);
+      const marks = gMarks(gi.crn), S = subOf(gi.crn), done = [], skip = [], list = [], ps = {};
+      (gi.changes || []).forEach(([tid, k, oldV, newV]) => {
+        const cur = G.val(marks, tid, k);
+        if (cur !== newV) { skip.push([tid, k, cur, newV]); return; }
+        list.push({ id: tid, k, raw: oldV === null || oldV === undefined ? null : oldV }); done.push([tid, k, newV, oldV === undefined ? null : oldV]);
+      });
+      Object.entries(gi.subs || {}).forEach(([tid, kv]) => Object.entries(kv).forEach(([k, ov]) => {
+        if (JSON.stringify((S[tid] || {})[k] || null) !== JSON.stringify(((gi.subsNew || {})[tid] || {})[k] || null)) return;
+        (ps[tid] = ps[tid] || {})[k] = ov === undefined ? null : ov;
+      }));
+      if (list.length) { const r = gSetGrades(gi.crn, list, 'تراجع عن ' + id); if (r.gate) fail(r.gate); }
+      if (Object.keys(ps).length) { A.raw.gmarks[gi.crn] = merge(clone(A.raw.gmarks[gi.crn] || { g: {}, t: {} }), { s: clone(ps) }); enqueue('gmarks/' + gi.crn, { s: ps }); }
+      const at = isoNow();
+      A.raw.gimp[id] = Object.assign(clone(gi), { status: 'undone', undoneAt: at, undoneBy: A.me.name || A.me.id, undoSkip: skip });
+      enqueue('gimp/' + id, { status: 'undone', undoneAt: at, undoneBy: A.me.name || A.me.id, undoSkip: skip });
+      return { id, restored: done, skipped: skip, s: ps, at };
+    }
+    async function list(crn) {
+      return Object.values(A.raw.gimp || {}).filter((x) => x.crn === crn).sort((a, b) => String(b.at).localeCompare(String(a.at)))
+        .map((x) => ({ id: x.id, at: x.at, by: x.byName, file: x.file, overwrite: x.overwrite, add: x.add, chg: x.chg, same: x.same, kept: x.kept, bad: x.nbad || 0, status: x.status, undone_at: x.undoneAt || null, undone_by: x.undoneBy || null, changes: x.changes || [], skip: x.undoSkip || [], wb: x.wb || {} }));
+    }
+    return { imp, undo, list, sync: () => {} };
+  })();
+  const BK = WEB
+    ? { imp: (a) => window.HAADER_WEB.rpc('grades_import', a), list: (crn) => window.HAADER_WEB.rpc('grades_imports', { p_crn: crn }), undo: (id) => window.HAADER_WEB.rpc('grades_import_undo', { p_id: id }), sync: () => { try { window.HAADER_WEB.bump('gmarks'); } catch (e) { /* التحديث الدوري يكمل */ } } }
+    : LB;
+  if (!WEB) {
+    A.raw.gimp = A.raw.gimp || {};
+    const o = boot; boot = async function () { await o(); if (typeof db !== 'undefined' && db) try { gWatch('gimp'); } catch (e) { /* سجل الاستيراد يبقى محلياً حتى التحميل التالي */ } };
+  }
 
   /* استيراد التوزيع: كما هو، مع حفظ البنود التفصيلية في الشعبة */
   gParseBook = parseBook;
@@ -6969,21 +7077,21 @@ if (window.HAADER_WEB) (() => {
     for (const it of plan.items) {
       if (!it.direct.length && !Object.keys(it.items).length) continue;
       try {
-        const r = await window.HAADER_WEB.rpc('grades_import', { p_crn: it.crn, p_rows: it.direct, p_items: it.items, p_overwrite: !!over, p_file: plan.file, p_wb: wbArg });
+        const r = await BK.imp({ p_crn: it.crn, p_rows: it.direct, p_items: it.items, p_overwrite: !!over, p_file: plan.file, p_wb: wbArg });
         applyLocal(it.crn, r); res.push({ crn: it.crn, ok: true, r });
         if (r.id) gLog([['import', it.crn, '', '', '', (r.add || 0) + (r.chg || 0), `${plan.file} • ${r.id} • جديدة ${r.add}، حُدّثت ${r.chg}، مطابقة ${r.same}، أُبقيت ${r.kept}، رُفضت ${(r.bad || []).length}`]]);
       } catch (e) { res.push({ crn: it.crn, ok: false, msg: (e && e.message) || 'تعذر الحفظ' }); }
     }
     A.gPlan = null; GXH.cache = {};
-    try { window.HAADER_WEB.bump('gmarks'); } catch (e) { /* */ }
+    BK.sync();
     const errs = []; res.forEach((x) => { if (x.ok) (x.r.bad || []).forEach((b) => errs.push({ crn: x.crn, id: b.id || '', name: gNameOf(x.crn, b.id || ''), k: b.k || '', msg: b.msg })); else errs.push({ crn: x.crn, msg: 'لم تُحفظ: ' + x.msg }); });
     A.gErr = { file: plan.file, rows: errs };
     closeModal(); rebuild(); render(true);
     const ok = res.filter((x) => x.ok), fail = res.filter((x) => !x.ok), tot = (k) => ok.reduce((a, x) => a + (x.r[k] || 0), 0);
     modal(`<h2>${fail.length ? (ok.length ? 'اكتمل الاستيراد جزئياً' : 'لم يُحفظ الاستيراد') : 'حُفظت الدرجات في قاعدة البيانات'}</h2>
-      ${ok.length ? `<div class="gnote ok">أكد الخادم حفظ ${tot('add') + tot('chg')} درجة في ${ok.length} شعبة: جديدة ${tot('add')}، حُدّثت ${tot('chg')}، مطابقة للمحفوظ ${tot('same')}${tot('kept') ? `، وأُبقيت ${tot('kept')} درجة محفوظة دون تحديث` : ''}.</div>` : ''}
+      ${ok.length ? `<div class="gnote ok">${WEB ? 'أكد الخادم حفظ' : 'حُفظت'} ${tot('add') + tot('chg')} درجة في ${ok.length} شعبة: جديدة ${tot('add')}، حُدّثت ${tot('chg')}، مطابقة للمحفوظ ${tot('same')}${tot('kept') ? `، وأُبقيت ${tot('kept')} درجة محفوظة دون تحديث` : ''}.</div>` : ''}
       <div class="tw"><table><thead><tr><th class="n">الشعبة</th><th>النتيجة</th><th class="n">جديدة</th><th class="n">حُدّثت</th><th class="n">مطابقة</th><th class="n">مرفوضة</th><th class="n">رقم العملية</th></tr></thead><tbody>${res.map((x) => x.ok ? `<tr><td class="n"><b>${x.crn}</b></td><td><span class="chip ok">حُفظت</span></td><td class="n">${x.r.add}</td><td class="n">${x.r.chg}</td><td class="n">${x.r.same}</td><td class="n">${(x.r.bad || []).length}</td><td class="n" dir="ltr" style="font-size:12px">${esc(x.r.id || '—')}</td></tr>` : `<tr><td class="n"><b>${x.crn}</b></td><td colspan="6"><span class="chip bad">لم تُحفظ</span> ${esc(x.msg)}</td></tr>`).join('')}</tbody></table></div>
-      ${errs.length ? `<div class="gnote warn">رفض الخادم ${errs.length} قيمة. التفاصيل في تقرير الأخطاء.</div>` : ''}
+      ${errs.length ? `<div class="gnote warn">${WEB ? 'رفض الخادم' : 'رُفضت'} ${errs.length} قيمة. التفاصيل في تقرير الأخطاء.</div>` : ''}
       <div class="row">${ok.length ? `<button class="btn p" data-act="gx-exp" data-crns="${ok.map((x) => x.crn).join(',')}">تصدير تقرير الدرجات</button>` : ''}${errs.length ? '<button class="btn" data-act="gx-err">تنزيل تقرير الأخطاء</button>' : ''}<button class="btn" data-act="modal-close">إغلاق</button></div>`);
     if (ok.length && !fail.length) toast('حُفظت الدرجات في قاعدة البيانات.');
   };
@@ -7034,7 +7142,7 @@ if (window.HAADER_WEB) (() => {
   async function loadHist(crn, force) {
     const c = GXH.cache[crn]; if (!force && c && Date.now() - c.at < 30000) return;
     if (GXH.busy[crn]) return; GXH.busy[crn] = 1;
-    try { const list = await window.HAADER_WEB.rpc('grades_imports', { p_crn: crn }); GXH.cache[crn] = { at: Date.now(), list: list || [] }; }
+    try { const list = await BK.list(crn); GXH.cache[crn] = { at: Date.now(), list: list || [] }; }
     catch (e) { GXH.cache[crn] = { at: Date.now(), list: [], err: 'تعذر تحميل سجل الاستيراد.' }; }
     GXH.busy[crn] = 0;
     const el = document.querySelector(`#gxHist[data-crn="${crn}"] .gxh-body`); if (el) el.innerHTML = histHtml(crn);
@@ -7047,12 +7155,12 @@ if (window.HAADER_WEB) (() => {
   };
   ACT['gx-undo-ok'] = async (e) => {
     const id = e.dataset.id, crn = e.dataset.crn; e.disabled = true;
-    let r; try { r = await window.HAADER_WEB.rpc('grades_import_undo', { p_id: id }); } catch (x) { e.disabled = false; toast((x && x.message) || 'تعذر التراجع.'); return; }
+    let r; try { r = await BK.undo(id); } catch (x) { e.disabled = false; toast((x && x.message) || 'تعذر التراجع.'); return; }
     const m = A.raw.gmarks[crn] = clone(A.raw.gmarks[crn] || { g: {}, t: {} }); m.g = m.g || {};
     (r.restored || []).forEach(([tid, k, , to]) => { (m.g[tid] = m.g[tid] || {})[k] = to; });
     Object.entries(r.s || {}).forEach(([tid, kv]) => Object.entries(kv).forEach(([k, ov]) => { m.s = m.s || {}; m.s[tid] = m.s[tid] || {}; if (ov === null) delete m.s[tid][k]; else m.s[tid][k] = ov; }));
     gLog([['undo', crn, '', '', '', (r.restored || []).length, `تراجع عن ${id}${(r.skipped || []).length ? `، ولم تُمس ${r.skipped.length} درجة عُدّلت بعده` : ''}`]]);
-    try { window.HAADER_WEB.bump('gmarks'); } catch (x) { /* */ }
+    BK.sync();
     delete GXH.cache[crn]; closeModal(); rebuild(); render(true);
     modal(`<h2>تم التراجع</h2><div class="gnote ok">أُعيدت ${(r.restored || []).length} درجة إلى قيمتها السابقة.</div>${(r.skipped || []).length ? `<div class="gnote warn">لم تُمس ${r.skipped.length} درجة لأنها عُدّلت بعد الاستيراد:<ul>${r.skipped.slice(0, 15).map(([tid, k, cur]) => `<li>${esc(gNameOf(crn, tid))} — ${esc(k)}: ${cur == null ? '—' : G.fmt(cur)}</li>`).join('')}</ul></div>` : ''}<button class="btn" data-act="modal-close">إغلاق</button>`);
   };
@@ -7095,7 +7203,7 @@ if (window.HAADER_WEB) (() => {
      وتنسيق شرطي للناقص والخاطئ، والمجاميع والتقدير والحالة تُحسب آلياً.
    - في المصنف معرّف خفي (الفصل والمدرب والشعب وبصمة كل شعبة) يتحقق منه الاستيراد.
    ==================================================================== */
-if (window.HAADER_WEB) (() => {
+if (document.getElementById('shell')) (() => {
   const GREEN = 'FF006C35', BLUE = 'FF1F5AA6', LGREEN = 'FFE8F3EC', LBLUE = 'FFE7EEF8', INPUT = 'FFFFF8D6', GREY = 'FFF0F0F0', LINE = 'FFBFC8C2';
   const FONT = 'Arial', FOOT = 'الكلية التقنية ببيشة – منصة حاضر Haader';
   const ORGL = 'المؤسسة العامة للتدريب التقني والمهني — الكلية التقنية ببيشة';
@@ -7396,7 +7504,7 @@ if (window.HAADER_WEB) (() => {
    للبطاقات الإحصائية، وظهور تدريجي عند تغيير الصفحة، وتدرج للرسوم البيانية.
    لا يغيّر أي وظيفة: يضيف عناصر عرض فقط، ويُلغى كله من «المظهر المطوّر».
    ==================================================================== */
-if (window.HAADER_WEB) (() => {
+if (document.getElementById('shell')) (() => {
   const KEY = 'haader.look';
   const getLook = () => { try { return localStorage.getItem(KEY) || 'v2'; } catch (e) { return 'v2'; } };
   const setLook = (v) => { try { localStorage.setItem(KEY, v); } catch (e) { /* تفضيل للعرض فقط */ } document.documentElement.setAttribute('data-look', v); };

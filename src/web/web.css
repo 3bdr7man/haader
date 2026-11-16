@@ -49,5 +49,3 @@
 body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
 
 /* استيراد الدرجات من Excel */
-.gxopt{display:grid;gap:10px;margin:14px 0}
-.gxopt .ck{display:flex;gap:8px;align-items:center}

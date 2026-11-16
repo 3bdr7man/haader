@@ -3,3 +3,4 @@ build/
 tests/out/
 tests/fixtures/grades.xlsx
 *.local.*
+dist/

@@ -2045,7 +2045,7 @@ Object.assign(CHG, {
    الرمز داخل QR: H1.<رقم الجلسة>.<الشريحة الزمنية>.<توقيع HMAC>، ويحمله رابط نموذج Forms معبأ مسبقاً.
    المتدرب يسجّل بحساب المؤسسة فيُعرف بريده، ثم تُعتمد الردود في المنصة بعد التحقق من التوقيع والوقت والهوية والتسجيل في الشعبة. */
 const QR_FORM_DEF = { base: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx', id: 't2SN3tp5mEGAwnuENDSDT6O-F_zWDl5Nsk4ZU1dRXulURDZNNEo3VzZWVjBZRkdESVJVQUZHM1FJUy4u', qId: 'r802be707c27b4d50b21a23d5b47228d7', qCode: 'r8b373cb6f28c4ece8323f33ed1df15c9' };
-const QR_DEF = { minutes: 15, rotate: 30, grace: 90, lateGrace: 3, domains: ['tvtc.edu.sa', 'mt.tvtc.edu.sa'] };
+const QR_DEF = { minutes: 15, rotate: 30, grace: 180, lateGrace: 3, timeCheck: false, domains: ['tvtc.edu.sa', 'mt.tvtc.edu.sa'] };
 /* وقت المسح ← حالة المتدرب: يُقاس التأخير من بداية المحاضرة في جدول الشعبة.
    من مسح حتى «بداية المحاضرة أو بدء الجلسة، أيهما أبعد» + السماح = حاضر، ومن مسح بعدها = «م» بعدد الدقائق من بداية المحاضرة. */
 function qrLecStart(s) {
@@ -2209,16 +2209,21 @@ const WHY = { unknown: 'رمز لا يخص أي جلسة', forged: 'رمز غي�
 const MANUAL_OK = new Set(['late', 'stale', 'early']);
 const CODE_RE = /^H1\.([A-Z2-9]{10})\.(\d+|S)\.([A-Z2-9]{8})$/;
 async function qrCheck(items) {
-  const S = A.raw.qrs || {}, seen = new Set(), had = {};
+  /* الرد المعتمد سابقاً يُتخطى. والمرفوض سابقاً يُعاد فحصه بالقواعد الحالية: إن قُبل الآن يُعتمد، وإلا يبقى مرفوضاً دون تكرار */
+  const S = A.raw.qrs || {}, seen = new Set(), rejd = new Set(), had = {};
   Object.values(S).forEach((s) => {
     Object.entries(s.ins || {}).forEach(([id, x]) => { if (x.rid) seen.add(String(x.rid)); had[`${s.crn}|${s.d}|${id}`] = 1; });
-    Object.keys(s.rej || {}).forEach((r) => seen.add(r));
+    Object.entries(s.rej || {}).forEach(([r, x]) => { if (x && x.acc) seen.add(r); else rejd.add(r); });
   });
-  const res = { ok: [], bad: [], old: 0, other: 0, foreign: 0 }, cfg = qrCfg();
+  const res = { ok: [], bad: [], old: 0, other: 0, foreign: 0, again: 0 }, cfg = qrCfg();
+  /* وقت إلغاء كل إصدار من الرمز (من سجل الجلسة): من فتح النموذج قبل الإلغاء يبقى حضوره */
+  /* السجل يكتب رقم الإصدار الجديد بعد الإلغاء، فإلغاء الإصدار g مسجّل بـ«الإصدار g+1» */
+  const revAt = (s, g) => { let t = 0; Object.values(s.log || {}).forEach((l) => { if (l && l[1] === 'إلغاء الرمز وإعادة توليده' && String(l[3] || '') === 'الإصدار ' + (g + 1)) t = Date.parse(l[0]); }); return t; };
   const list = items.slice().sort((a, b) => String(a.s || a.t).localeCompare(String(b.s || b.t)));
   for (const it of list) {
     const rid = String(it.r ?? '').trim();
     if (rid && seen.has(rid)) { res.old++; continue; }
+    const wasRej = !!(rid && rejd.has(rid));
     const p = CODE_RE.exec(String(it.c || '').trim());
     if (!p) { res.foreign++; continue; }
     const s = S[p[1]], typed = String(it.id || '').replace(/\D/g, '');
@@ -2231,23 +2236,30 @@ async function qrCheck(items) {
     const sec = A.m.secBy[s.crn], row = sec && sec.rows.find((r) => r.id === base.id);
     if (row) base.nm = row.name;
     let why = '';
+    const tO = Date.parse(it.s || it.t), tT = Date.parse(it.t || it.s);
     if ((await qrSig(s.sid, s.gen, p[2])) !== p[3]) {
-      let old = false; for (let g = 1; g < s.gen && !old; g++) if ((await qrSig(s.sid, g, p[2])) === p[3]) old = true;
-      why = old ? 'revoked' : 'forged';
+      let g0 = 0; for (let g = 1; g < s.gen && !g0; g++) if ((await qrSig(s.sid, g, p[2])) === p[3]) g0 = g;
+      /* رمز إصدار سابق: يُقبل لمن فتح النموذج قبل لحظة الإلغاء (كما تَعِد شاشة الإلغاء) */
+      if (!g0) why = 'forged';
+      else { const ra = revAt(s, g0); if (!(ra && tO && tO <= ra)) why = 'revoked'; }
     } else if (p[2] === 'S' && !s.static) why = 'forged';
-    else if (!id) why = 'noid';
-    else if (typed && typed !== id) why = 'mismatch';
-    else if (!row || !H.isActive(A.m, sec, row)) why = 'notin';
-    else {
-      const tO = Date.parse(it.s || it.t), tT = Date.parse(it.t || it.s), st = Date.parse(s.start), en = qrEndMs(s);
-      if (tO < st - 5000) why = 'early';
-      else if (tO > en || tT > en + 120000) why = 'late';
-      else if (p[2] !== 'S') { const s0 = +p[2] * s.rotate * 1000; if (tO < s0 - 5000 || tO - s0 > (s.rotate + s.grace) * 1000) why = 'stale'; }
+    if (!why) {
+      if (!id) why = 'noid';
+      else if (!row || !H.isActive(A.m, sec, row)) why = 'notin';
+      else if (cfg.timeCheck) {
+        /* التحقق من الوقت اختياري (إعدادات QR). دونه تُعتمد الردود في أي وقت، ويُحسب التأخير من وقت فتح النموذج */
+        const st = Date.parse(s.start), en = qrEndMs(s), gr = Math.max(+s.grace || 0, +cfg.grace || 0);
+        if (tO < st - 5000) why = 'early';
+        else if (tO > en || tT > en + 120000) why = 'late';
+        else if (p[2] !== 'S') { const s0 = +p[2] * s.rotate * 1000; if (tO < s0 - 5000 || tO - s0 > (s.rotate + gr) * 1000) why = 'stale'; }
+      }
     }
+    /* الهوية من حساب المؤسسة؛ والرقم المكتوب إن خالفه خطأ إملائي يُذكر ولا يُرفض به الحضور */
+    if (!why && typed && id && typed !== id) base.typo = typed;
     const lk = `${s.crn}|${s.d}|${base.id}`;
     if (!why && had[lk]) why = 'dup';
-    if (why) res.bad.push(Object.assign(base, { why }));
-    else { had[lk] = 1; base.late = qrLateOf(s, base.o || base.t); res.ok.push(base); }
+    if (why) { if (wasRej) { res.old++; continue; } res.bad.push(Object.assign(base, { why })); }
+    else { had[lk] = 1; base.late = qrLateOf(s, base.o || base.t); if (wasRej) { base.again = true; res.again++; } res.ok.push(base); }
   }
   return res;
 }
@@ -2255,9 +2267,9 @@ async function qrReview(items, src) {
   if (!A.raw.meta.qrkey) { toast('لم تُفتح أي جلسة QR بعد.'); return; }
   const res = await qrCheck(items); A.qrRes = res;
   const sname = (x) => (x.crn && A.m.secBy[x.crn] ? secLabel(A.m.secBy[x.crn]) : '—');
-  modal(`<h2>مراجعة ردود التحضير</h2><div class="sub">المصدر: ${esc(src)} • ${items.length} رداً • سبق اعتماده: ${res.old}${res.other ? ` • لشعب مدربين آخرين: ${res.other}` : ''}${res.foreign ? ` • ليست ردود تحضير: ${res.foreign}` : ''}</div>
+  modal(`<h2>مراجعة ردود التحضير</h2><div class="sub">المصدر: ${esc(src)} • ${items.length} رداً • سبق معالجته: ${res.old}${res.again ? ` • أُعيد فحص ${res.again} رداً رُفض سابقاً فقُبل` : ''}${res.other ? ` • لشعب مدربين آخرين: ${res.other}` : ''}${res.foreign ? ` • ليست ردود تحضير: ${res.foreign}` : ''}</div>
   <div class="tiles"><div class="tile ok"><b>${res.ok.length}</b><span>مقبول</span></div><div class="tile bad"><b>${res.bad.length}</b><span>مرفوض</span></div></div>
-  ${res.ok.length ? `<h3>المقبول</h3><div class="tw" style="max-height:220px"><table><thead><tr><th>المتدرب</th><th>الشعبة</th><th class="n">المحاضرة</th><th class="n">وقت المسح</th><th>الحالة</th></tr></thead><tbody>${res.ok.map((x) => `<tr><td>${esc(x.nm)} <small class="sub">${x.id}</small></td><td>${esc(sname(x))}</td><td class="n">${x.d}</td><td class="n">${hm(x.o || x.t)}</td><td>${x.late ? `<span class="chip ${x.late > A.m.s.lateLimit ? 'bad' : 'warn'}">${qrLateText(x.late)}</span>` : '<span class="chip ok">حاضر</span>'}</td></tr>`).join('')}</tbody></table></div>` : ''}
+  ${res.ok.length ? `<h3>المقبول</h3><div class="tw" style="max-height:220px"><table><thead><tr><th>المتدرب</th><th>الشعبة</th><th class="n">المحاضرة</th><th class="n">وقت المسح</th><th>الحالة</th></tr></thead><tbody>${res.ok.map((x) => `<tr><td>${esc(x.nm)} <small class="sub">${x.id}</small></td><td>${esc(sname(x))}</td><td class="n">${x.d}</td><td class="n">${hm(x.o || x.t)}</td><td>${x.late ? `<span class="chip ${x.late > A.m.s.lateLimit ? 'bad' : 'warn'}">${qrLateText(x.late)}</span>` : '<span class="chip ok">حاضر</span>'}${x.again ? ' <span class="chip info">رُفض سابقاً</span>' : ''}${x.typo ? ` <span class="chip warn" title="الهوية من حساب المؤسسة">كتب ${esc(x.typo)}</span>` : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
   ${res.bad.length ? `<h3>المرفوض</h3><div class="tw" style="max-height:220px"><table><thead><tr><th>المتدرب</th><th>الشعبة</th><th class="n">الوقت</th><th>السبب</th></tr></thead><tbody>${res.bad.map((x) => `<tr><td>${esc(x.nm || x.e || '—')} <small class="sub">${x.id || ''}</small></td><td>${esc(sname(x))}</td><td class="n">${hm(x.o || x.t)}</td><td>${esc(WHY[x.why])}</td></tr>`).join('')}</tbody></table></div>` : ''}
   <div class="sub">يُسجَّل المقبول «ح»، أو «م» بعدد دقائق التأخير من بداية المحاضرة لمن مسح بعد ${qrCfg().lateGrace} دقائق من بدايتها (أو من بدء الجلسة إن بدأت متأخرة)، إذا كانت خانته فارغة أو «غ». ويبقى أي تسجيل آخر كما هو. تُحفظ أسباب الرفض في سجل الجلسة.</div>
   <div class="row">${res.ok.length || res.bad.length ? `<button class="btn p" data-act="qr-apply">اعتماد ${res.ok.length} حضوراً</button>` : ''}<button class="btn" data-act="modal-close">إغلاق</button></div>`);
@@ -2270,7 +2282,8 @@ function qrApply() {
     const cur = H.code(A.m, x.crn, x.id, x.d) || '', set = !cur || cur === 'غ', cd = qrCodeFor(x.late || 0);
     if (set) marks.push({ crn: x.crn, id: x.id, d: x.d, code: cd });
     if (set && x.late) qrNote(x.crn, x.id, x.d, x.o || x.t, x.late);
-    P(x.sid).ins[x.id] = { rid: x.rid, at: x.t, opened: x.o, e: x.e, prev: cur, late: x.late || 0, applied: set ? `سُجّل «${cd}»` : `بقي «${cur}»`, by: A.me.id, on: iso };
+    P(x.sid).ins[x.id] = Object.assign({ rid: x.rid, at: x.t, opened: x.o, e: x.e, prev: cur, late: x.late || 0, applied: set ? `سُجّل «${cd}»` : `بقي «${cur}»`, by: A.me.id, on: iso }, x.typo ? { typed: x.typo } : {}, x.again ? { again: true } : {});
+    if (x.again && x.rid) P(x.sid).rej[x.rid] = { acc: { by: A.me.id, on: iso, auto: true } };
   });
   res.bad.filter((x) => x.sid && A.raw.qrs[x.sid] && mayEdit(A.raw.qrs[x.sid].crn)).forEach((x) => { P(x.sid).rej[x.rid || 'n' + rnd(6)] = { id: x.id || '', typed: x.typed, e: x.e, at: x.t, opened: x.o, why: x.why, on: iso, by: A.me.id }; });
   Object.entries(by).forEach(([sid, p]) => { qrPatch(sid, p); const a = Object.keys(p.ins).length, b = Object.keys(p.rej).length; qrLog(sid, 'اعتماد الردود', `${a} حضور، ${b} مرفوض`); qrAudit(A.raw.qrs[sid], 'اعتماد الردود', `${a} حضور، ${b} مرفوض`); });
@@ -2335,6 +2348,7 @@ Object.assign(CHG, {
   'qr-date': (e) => { A.qrD = e.value; e.blur(); render(true); },
   'qr-xlsx': (e) => { const f = e.files[0]; e.value = ''; if (f) qrXlsx(f).catch(() => toast('تعذرت قراءة الملف. صدّر ردود النموذج من Forms إلى Excel وأعد المحاولة.')); },
   'qr-cfg': (e) => { const v = parseInt(e.value, 10); if (isNaN(v) || v < +e.min || v > +e.max) { toast('أدخل رقماً ضمن الحدود.'); render(true); return; } const c = Object.assign({}, A.raw.meta.qrcfg || {}, { [e.dataset.k]: v }); saveMeta('qrcfg', c); toast('حُفظ.'); },
+  'qr-tc': (e) => { saveMeta('qrcfg', Object.assign({}, A.raw.meta.qrcfg || {}, { timeCheck: !!e.checked })); toast(e.checked ? 'سيُتحقق من وقت الرد عند الاعتماد.' : 'تُعتمد ردود ملف التحضير في أي وقت دون قيد زمني.'); },
   'qr-form': (e) => {
     const v = e.value.trim(); if (!v) return;
     try { const u = new URL(v), ps = [...u.searchParams.entries()].filter(([k]) => /^r[0-9a-f]{32}$/.test(k)), code = ps.find(([, x]) => /^(H1|CODE|رمز)/i.test(x)) || ps[ps.length - 1], idq = ps.find((p) => p !== code);
@@ -2347,7 +2361,7 @@ VIEW_CHG.add('qr-sec'); VIEW_CHG.add('qr-date');
 VIEW_ACTS.add('qr-full-x'); VIEW_ACTS.add('to-qr');
 
 /* إعدادات QR للمسؤول */
-const qrPrefs = () => { const c = qrCfg(); return `<section class="panel" id="qrPrefs"><h2>التحضير عبر QR</h2><div class="row"><label>مدة الصلاحية الافتراضية (دقيقة)<input type="number" min="1" max="180" value="${c.minutes}" data-change="qr-cfg" data-k="minutes" style="width:90px"></label><label>تجدد الرمز كل (ثانية)<input type="number" min="10" max="300" value="${c.rotate}" data-change="qr-cfg" data-k="rotate" style="width:90px"></label><label>مهلة فتح الرابط بعد تجدده (ثانية)<input type="number" min="15" max="600" value="${c.grace}" data-change="qr-cfg" data-k="grace" style="width:90px"></label><label>سماح التأخير بعد بداية المحاضرة (دقيقة)<input type="number" min="0" max="15" value="${c.lateGrace}" data-change="qr-cfg" data-k="lateGrace" style="width:90px"></label></div><div class="sub">من مسح الرمز بعد السماح يُسجَّل «م» بعدد دقائق تأخره من بداية المحاضرة في جدول الشعبة (مثلاً «م7»)، وما زاد على حد التأخير (${A.m ? A.m.s.lateLimit : 15} دقيقة) يُحتسب غياباً.</div>
+const qrPrefs = () => { const c = qrCfg(); return `<section class="panel" id="qrPrefs"><h2>التحضير عبر QR</h2><div class="row"><label>مدة الصلاحية الافتراضية (دقيقة)<input type="number" min="1" max="180" value="${c.minutes}" data-change="qr-cfg" data-k="minutes" style="width:90px"></label><label>تجدد الرمز كل (ثانية)<input type="number" min="10" max="300" value="${c.rotate}" data-change="qr-cfg" data-k="rotate" style="width:90px"></label><label>مهلة فتح الرابط بعد تجدده (ثانية)<input type="number" min="15" max="600" value="${c.grace}" data-change="qr-cfg" data-k="grace" style="width:90px"></label><label>سماح التأخير بعد بداية المحاضرة (دقيقة)<input type="number" min="0" max="15" value="${c.lateGrace}" data-change="qr-cfg" data-k="lateGrace" style="width:90px"></label></div><label class="ck" style="margin-top:8px"><input type="checkbox" data-change="qr-tc" ${c.timeCheck ? 'checked' : ''}> التحقق من وقت الرد عند اعتماد ملف التحضير (رفض ما قبل الجلسة أو بعد انتهائها أو الرمز القديم)</label><div class="sub">دون هذا الخيار تُعتمد ردود ملف التحضير في أي وقت دون قيد زمني، ويبقى التحقق من صحة الرمز وحساب المتدرب وتسجيله في الشعبة وعدم التكرار، ويُحسب التأخير من وقت فتح النموذج.</div><div class="sub">من مسح الرمز بعد السماح يُسجَّل «م» بعدد دقائق تأخره من بداية المحاضرة في جدول الشعبة (مثلاً «م7»)، وما زاد على حد التأخير (${A.m ? A.m.s.lateLimit : 15} دقيقة) يُحتسب غياباً.</div>
   <div class="sub" style="margin-top:6px">النموذج المرتبط: <span dir="ltr">${esc(c.form.id.slice(0, 12))}…</span>. لاستبدال النموذج: افتح «الحصول على عنوان URL معبأ مسبقاً» فيه، واكتب 111 في «الرقم التدريبي» وCODE في «رمز الحضور»، ثم الصق الرابط الناتج هنا.</div><input type="url" dir="ltr" placeholder="رابط التعبئة المسبقة" aria-label="رابط التعبئة المسبقة" data-change="qr-form" style="width:100%;margin-top:6px"></section>`; };
 const prefsBase = VIEWS.prefs;
 VIEWS.prefs = () => prefsBase() + qrPrefs();

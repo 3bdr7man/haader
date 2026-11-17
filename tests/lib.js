@@ -60,6 +60,7 @@ const MOCK = `(() => {
   window.__DL = [];
   const cap = { db, downloads: { async save({ filename, data }) { let text = ''; try { text = typeof data === 'string' ? data : await data.text(); } catch (e) { text = '[binary]'; } window.__DL.push({ filename, size: (data && data.size) || text.length, text: text.slice(0, 200000), blob: data }); } }, user: { id: async () => window.__UID, isOwner: async () => !!window.__OWNER, can: async () => true, canEdit: async () => true }, assets: null };
   if (window.__MCP) cap.mcp = window.__MCP;
+  if (window.__USERCAP) cap.user = window.__USERCAP;
   window.claude = { use: async (n) => cap[n] || null };
   window.__docs = docs; window.__emit = emit;
 })();`;
@@ -75,7 +76,7 @@ async function open(browser, who, docs, opts = {}) {
   const acc = ACC[who];
   await page.addInitScript((rw) => { window.__HAADER_RW = rw; }, !opts.ro);
   if (opts.mcp) await page.addInitScript(opts.mcp);
-  await page.addInitScript(({ seedDocs, uid, sid, level }) => { window.__SEED = seedDocs; window.__UID = uid; window.__LEVEL = level; try { sessionStorage.setItem('haader.s', JSON.stringify({ id: sid, exp: Date.now() + 3600e3 })); } catch (e) { /* */ } }, { seedDocs: docs, uid: opts.uid === undefined ? 'cu_' + acc.id : opts.uid, sid: acc.id, level: opts.level || 'admin' });
+  await page.addInitScript(({ seedDocs, uid, sid, level }) => { window.__SEED = seedDocs; window.__UID = uid; window.__LEVEL = level; try { if (sid) sessionStorage.setItem('haader.s', JSON.stringify({ id: sid, exp: Date.now() + 3600e3 })); } catch (e) { /* */ } }, { seedDocs: docs, uid: opts.uid === undefined ? 'cu_' + acc.id : opts.uid, sid: opts.noSession ? null : acc.id, level: opts.level || 'admin' });
   await page.addInitScript(MOCK);
   await page.goto('file://' + (opts.file || process.env.HAADER_FILE || ROOT + '/index.html'));
   await page.waitForFunction(() => typeof A !== 'undefined' && A.me && A.m && A.m.sections && A.m.sections.length && A.got.gsec && A.got.gmarks, null, { timeout: 15000 });

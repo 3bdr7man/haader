@@ -8,12 +8,23 @@
    لا تُنقل الحسابات ولا كلمات المرور ولا سجلات الدخول.
    ==================================================================== */
 if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
-  const SRV = 'Supabase', PROJECT = 'urtdulwbpabslicxtsoa', EVERY = 60000;
-  const COLS = ['sections', 'marks', 'notes', 'meta', 'qrs', 'warnlog', 'bosla', 'bviol', 'bcase', 'bforms', 'gsec', 'gmarks', 'gcfg', 'gsnap', 'gops'];
+  const SRV = 'Supabase', PROJECT = 'urtdulwbpabslicxtsoa', EVERY = 10000;
+  const COLS = ['sections', 'marks', 'notes', 'meta', 'qrs', 'warnlog', 'bosla', 'bviol', 'bcase', 'bforms', 'gsec', 'gmarks', 'gcfg', 'gsnap', 'gops', 'accounts', 'tacc'];
+  /* الحسابات: تُنقل بياناتها (الاسم والدور والصلاحيات والحالة وآخر دخول) دون بصمات كلمات المرور،
+     ولا يُحذف منها شيء هنا. دخول نسخة Claude لصاحب المنصة بحسابه في Claude، فلا يتأثر بتغيير كلمة المرور */
+  const CRED = ['salt', 'iter', 'hash', 'mustChange'];
+  const NODEL = { accounts: true, tacc: true };
+  const shape = (col, id, data) => {
+    if (col !== 'accounts' && col !== 'tacc') return data;
+    const loc = ((A.raw || {})[col] || {})[id] || {}, d = Object.assign({}, data);
+    CRED.forEach((k) => { delete d[k]; if (k in loc) d[k] = loc[k]; });
+    return d;
+  };
   const KEEP = { meta: ['qrkey', 'audit', 'mirror', 'emailblock'] };   // خاصة بنسخة Claude لا تُستبدل ولا تُحذف
   const kept = (c, id) => (KEEP[c] || []).includes(id);
   A.readOnly = !window.__HAADER_RW;
-  const M = { mcp: null, state: 'init', code: '', at: null, n: 0, busy: false, tried: false };
+  const M = { mcp: null, state: 'init', code: '', at: null, n: 0, busy: false, tried: false, sig: '' };
+  const colsSql = () => COLS.map((c) => "'" + c + "'").join(',');
   const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
   /* نتيجة execute_sql: نص يضم مصفوفة JSON بين وسمي untrusted-data */
   function rowsOf(res) {
@@ -45,21 +56,32 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
       for (let i = 0; i < changed.length; i += 10) {
         const part = changed.slice(i, i + 10);
         const rows = await sql(`select col, id, data from doc where (col, id) in (${part.map((r) => `(${q(r.col)},${q(r.id)})`).join(',')})`);
-        for (const r of rows) { if (r && r.col && r.id && r.data && typeof r.data === 'object') await db.doc(r.col + '/' + r.id).set(r.data); }
+        for (const r of rows) { if (r && r.col && r.id && r.data && typeof r.data === 'object') await db.doc(r.col + '/' + r.id).set(shape(r.col, r.id, r.data)); }
       }
       /* ما حُذف من الرابط يُحذف هنا (للمجموعات المحمّلة وحدها) */
       const have = new Set(list.map((r) => r.col + '/' + r.id)); let del = 0;
       for (const c of COLS) {
-        const loc = A.raw[c]; if (!loc || typeof loc !== 'object') continue;
+        const loc = A.raw[c]; if (!loc || typeof loc !== 'object' || NODEL[c]) continue;
         for (const id of Object.keys(loc)) if (!kept(c, id) && !have.has(c + '/' + id)) { await db.doc(c + '/' + id).delete(); del++; }
       }
       const u = {}; list.forEach((r) => { u[r.col + '/' + r.id] = r.u; });
       const at = new Date().toISOString();
       if (changed.length || del || !((A.raw.meta || {}).mirror)) await db.doc('meta/mirror').set({ u, at, n: changed.length + del });
       M.state = 'ok'; M.code = ''; M.at = at; M.n = changed.length + del;
+      M.sig = list.length + '|' + list.reduce((x, r) => (r.u > x ? r.u : x), '');
     } catch (e) {
       M.state = 'err'; M.code = (e && e.code) || 'upstream_error';
     } finally { M.busy = false; paint(); }
+  }
+  /* فحص خفيف كل 10 ثوانٍ: عدد الوثائق وآخر وقت تعديل؛ فإن تغيّر أحدهما جُلب ما تغيّر */
+  const STOP = { needs_reauth: 1, server_not_connected: 1, not_in_manifest: 1, approval_required: 1, blocked_by_policy: 1, selection_required: 1 };
+  async function probe() {
+    if (M.busy || !M.mcp || !db || document.hidden || (M.state === 'err' && STOP[M.code])) return;   // حالات تحتاج إجراءً من المستخدم: لا إعادة تلقائية
+    try {
+      const r = (await sql(`select count(*)::int as n, coalesce(max(updated_at)::text, '') as m from doc where col in (${colsSql()}) and not (col = 'meta' and id in ('qrkey','audit','mirror','emailblock'))`))[0] || {};
+      const sig = r.n + '|' + r.m;
+      if (sig !== M.sig) await pull(false);
+    } catch (e) { M.state = 'err'; M.code = (e && e.code) || 'upstream_error'; paint(); }
   }
   const WHY = {
     needs_reauth: 'انتهى ربط Supabase بحسابك. أعد ربطه من إعدادات claude.ai ← الموصلات، ثم اضغط «مزامنة الآن».',
@@ -78,7 +100,7 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
     if (!M.mcp) msg = 'تُعرض آخر بيانات جُلبت من الرابط. لجلب الجديد افتح هذه النسخة من حسابك المرتبط بـ Supabase.';
     else if (M.state === 'pulling' || (M.state === 'init' && !M.tried)) msg = 'جارٍ جلب آخر البيانات من الرابط…';
     else if (M.state === 'err') { msg = WHY[M.code] || 'تعذّر الوصول إلى الرابط الآن. تبقى آخر بيانات جُلبت ظاهرة.'; cls = ' warn'; }
-    else msg = `تُجلب البيانات من الرابط تلقائياً كل دقيقة${M.n ? ` • حُدّثت ${M.n} وثيقة في آخر مزامنة` : ''}.`;
+    else msg = `تُجلب البيانات من الرابط تلقائياً خلال ثوانٍ من أي تعديل فيه${M.n ? ` • حُدّثت ${M.n} وثيقة في آخر مزامنة` : ''}.`;
     return `<section class="mirbar${cls}" id="mirBar" role="status"><b>نسخة Claude للاطلاع فقط</b><span>سجّل التحضير والتعديلات من الرابط <span dir="ltr">3bdr7man.github.io/haader</span>. ${msg}${last ? ` آخر مزامنة: ${hm(last)}.` : ''}</span>${M.mcp ? `<button class="btn s" data-mir="pull" ${M.busy ? 'disabled' : ''}>${M.busy ? 'جارٍ الجلب…' : 'مزامنة الآن'}</button>` : ''}</section>`;
   }
   function paint() {
@@ -96,6 +118,8 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
   const baseEnqueue = enqueue;
   enqueue = function (path) {
     if (!A.readOnly) return baseEnqueue.apply(this, arguments);
+    const pt = arguments[1];
+    if (pt && typeof pt === 'object' && Object.keys(pt).every((k) => k === 'lastLogin')) return;   // تسجيل آخر دخول: يتولاه الرابط
     if (Date.now() - lastToast > 4000) { lastToast = Date.now(); toast('نسخة Claude للاطلاع فقط: سجّل من الرابط، وتصل التعديلات هنا تلقائياً.'); }
     const [c, ...rest] = String(path).split('/'), id = rest.join('/');
     if (db && A.raw[c] && id) db.doc(path).get().then((s) => { if (s.exists) A.raw[c][id] = s.data(); else delete A.raw[c][id]; try { rebuild(); render(true); } catch (e) { /* */ } }).catch(() => {});
@@ -107,15 +131,36 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
     try { paint(); } catch (e) { /* العرض أولاً */ }
     return r;
   };
+  /* صاحب المنصة يدخل نسخة الاطلاع بحسابه في Claude (لا بكلمة مرور منفصلة قد تختلف عن الرابط) */
+  let noAuto = false;
+  const baseLogout = logout;
+  logout = function () { noAuto = true; return baseLogout.apply(this, arguments); };
+  async function autoOwner() {
+    try {
+      const cl = window.claude, u = cl && cl.use ? await cl.use('user') : null;
+      if (!u || !(await u.isOwner())) return;
+      const tryIn = () => {
+        if (noAuto || A.me) return;
+        const o = typeof ownerAcc === 'function' ? ownerAcc() : null;
+        if (!o) { setTimeout(tryIn, 700); return; }
+        if (o.active === false) return;
+        enter(o, 'دخول تلقائي لصاحب المنصة بحسابه في Claude (نسخة الاطلاع)');
+      };
+      tryIn();
+    } catch (e) { /* تبقى شاشة الدخول */ }
+  }
   (async () => {
     try { const cl = window.claude; M.mcp = cl && cl.use ? await cl.use('mcp') : null; } catch (e) { M.mcp = null; }
     if (!A.readOnly) return;
+    autoOwner();
     paint();
     if (!M.mcp) return;
     const go = () => { if (db && A.fresh) pull(false); else setTimeout(go, 800); };
     go();
-    setInterval(() => pull(false), EVERY);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(false); });
+    setInterval(probe, EVERY);
+    setInterval(() => pull(false), 5 * 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) probe(); });
+    window.addEventListener('focus', () => probe());
   })();
   window.HAADER_MIRROR = { pull, M, rowsOf };
 })();

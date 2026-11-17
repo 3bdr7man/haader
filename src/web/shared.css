@@ -121,3 +121,13 @@ input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}
 .linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--brand,#0B5394);text-decoration:underline;cursor:pointer}
 .okbox{border-radius:12px;padding:12px 14px;margin:10px 0;line-height:1.9;font-size:14px;background:color-mix(in srgb,var(--ok,#1E7B4A) 8%,var(--surface,#fff));border:1px solid color-mix(in srgb,var(--ok,#1E7B4A) 30%,var(--line,#D5DEE9))}
 #gate .linkbtn{color:inherit;opacity:.92;text-underline-offset:3px}
+
+/* نسيت كلمة المرور: نوع الحساب */
+.pwas{display:flex;gap:6px;flex-wrap:wrap}
+.pwas-o{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;border:1px solid var(--line,#D5DEE9);cursor:pointer;font-size:14px;background:var(--surface,#fff);color:var(--ink,#13233A)}
+.pwas-o input{accent-color:var(--brand,#0B5394);margin:0}
+.pwas-o.on{border-color:var(--brand,#0B5394);background:color-mix(in srgb,var(--brand,#0B5394) 12%,var(--surface,#fff));font-weight:700}
+.pwas-o{white-space:nowrap}
+#gate .pwas-o{background:rgba(255,255,255,.08);color:inherit;border-color:rgba(255,255,255,.35)}
+#gate .pwas-o.on{background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.9)}
+#gate .pwas-o input{accent-color:#fff}

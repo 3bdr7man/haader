@@ -22,9 +22,13 @@ if (document.getElementById('shell') && window.HAADER_WEB) (() => {
 
   function gate() {
     if (F.mode === 'forgot') {
-      if (F.sent) return { key: 'pw-sent', inner: `<h2>استلمنا طلبك</h2><div class="okbox" role="status">إن كان ما كتبته مرتبطاً بحساب في المنصة فقد وصل طلبك إلى مسؤول المنصة، وسيتولى متابعة حالتك. يصلك على بريدك المسجل رابط آمن لمرة واحدة تعيّن به كلمة مرور جديدة بنفسك. لن تُرسل إليك كلمة مرور في أي رسالة.</div>${back}` };
-      return { key: 'pw-forgot' + (F.busy ? 'b' : '') + (F.err ? 'e' + F.err.length : ''), inner: `<h2>نسيت كلمة المرور؟</h2><p class="sub">اكتب اسم المستخدم أو الرقم التدريبي أو البريد الإلكتروني المرتبط بحسابك، ثم أرسل الطلب إلى مسؤول المنصة.</p>
-        <form class="stack" data-pwf novalidate><label>اسم المستخدم أو الرقم التدريبي أو البريد<input type="text" id="pfU" dir="ltr" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="200" value="${esc(F.v || '')}"></label>
+      const as = F.as || 'trainee';
+      const AS = { trainee: ['متدرب', 'الرقم التدريبي أو بريدك التدريبي', 'numeric', 'بريدك التدريبي (الرقم التدريبي@tvtc.edu.sa)'], trainer: ['مدرب', 'اسم المستخدم أو البريد المرتبط بحسابك', 'text', 'بريدك المسجل في المنصة'], head: ['رئيس القسم', 'اسم المستخدم أو البريد المرتبط بحسابك', 'text', 'بريدك المسجل في المنصة'] };
+      const a = AS[as];
+      if (F.sent) return { key: 'pw-sent' + as, inner: `<h2>استلمنا طلبك</h2><div class="okbox" role="status">إن كان ما كتبته مرتبطاً بحساب ${a[0] === 'متدرب' ? 'متدرب' : a[0]} في المنصة فقد وصل طلبك إلى مسؤول المنصة، وسيتولى متابعة حالتك. يصلك على ${a[3]} رابط آمن لمرة واحدة تعيّن به كلمة مرور جديدة بنفسك. لن تُرسل إليك كلمة مرور في أي رسالة.</div>${back}` };
+      return { key: 'pw-forgot' + as + (F.busy ? 'b' : '') + (F.err ? 'e' + F.err.length : ''), inner: `<h2>نسيت كلمة المرور؟</h2><p class="sub">اختر نوع حسابك، واكتب ما يعرّف به، ثم أرسل الطلب إلى مسؤول المنصة.</p>
+        <form class="stack" data-pwf novalidate><div class="pwas" role="radiogroup" aria-label="نوع الحساب">${Object.keys(AS).map((k) => `<label class="pwas-o${k === as ? ' on' : ''}"><input type="radio" name="pwas" value="${k}" ${k === as ? 'checked' : ''}> ${AS[k][0]}</label>`).join('')}</div>
+        <label>${a[1]}<input type="text" id="pfU" dir="ltr" inputmode="${a[2]}" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="200" value="${esc(F.v || '')}"></label>
         <div id="pfE" class="err" role="alert" ${F.err ? '' : 'hidden'}>${esc(F.err)}</div>
         <button class="btn p" id="pfB" type="submit" ${F.busy ? 'disabled' : ''}>${F.busy ? 'جارٍ الإرسال…' : 'إرسال الطلب'}</button></form>${back}` };
     }
@@ -56,7 +60,8 @@ if (document.getElementById('shell') && window.HAADER_WEB) (() => {
     refresh(); checkToken();
   });
 
-  ACT['pw-forgot'] = () => { F.mode = 'forgot'; F.sent = false; F.err = ''; F.v = ''; refresh(); setTimeout(() => { const u = document.getElementById('pfU'); if (u) u.focus(); }, 30); };
+  ACT['pw-forgot'] = () => { F.mode = 'forgot'; F.sent = false; F.err = ''; F.v = ''; F.as = F.as || 'trainee'; refresh(); setTimeout(() => { const u = document.getElementById('pfU'); if (u) u.focus(); }, 30); };
+  document.addEventListener('change', (ev) => { const r = ev.target; if (r && r.name === 'pwas') { const u = document.getElementById('pfU'); F.v = u ? u.value : F.v; F.as = r.value; F.err = ''; refresh(); setTimeout(() => { const u2 = document.getElementById('pfU'); if (u2) u2.focus(); }, 20); } });
   ACT['pw-back'] = () => { F.mode = ''; F.sent = false; F.err = ''; F.token = ''; F.check = null; F.done = ''; refresh(); };
 
   document.addEventListener('submit', async (ev) => {
@@ -64,9 +69,10 @@ if (document.getElementById('shell') && window.HAADER_WEB) (() => {
     if (f.matches && f.matches('form[data-pwf]')) {
       ev.preventDefault(); ev.stopPropagation();
       const v = String($('#pfU').value || '').trim(); F.v = v;
-      if (!v) { F.err = 'اكتب اسم المستخدم أو الرقم التدريبي أو البريد الإلكتروني.'; refresh(); return; }
+      if (!v) { F.err = (F.as || 'trainee') === 'trainee' ? 'اكتب رقمك التدريبي أو بريدك التدريبي.' : 'اكتب اسم المستخدم أو البريد المرتبط بحسابك.'; refresh(); return; }
+      if ((F.as || 'trainee') === 'trainee' && v.indexOf('@') < 0 && !/^[0-9٠-٩]{9}$/.test(v)) { F.err = 'الرقم التدريبي 9 أرقام.'; refresh(); return; }
       F.busy = true; F.err = ''; refresh();
-      try { await W.rpc('pw_reset_request', { p_login: v }); F.sent = true; F.v = ''; }
+      try { await W.rpc('pw_reset_request', { p_login: v, p_as: F.as || 'trainee' }); F.sent = true; F.v = ''; }
       catch (e) { F.err = 'تعذر إرسال الطلب الآن. تحقق من الاتصال وأعد المحاولة.'; }
       F.busy = false; refresh();
       return;
@@ -105,7 +111,7 @@ if (document.getElementById('shell') && window.HAADER_WEB) (() => {
   }
   setInterval(() => { if (!document.hidden) load(true); }, 120000);
   const ROLE = { admin: 'مسؤول المنصة', head: 'رئيس القسم', trainer: 'مدرب', viewer: 'حساب اطلاع', trainee: 'متدرب' };
-  const VIA = { username: 'اسم المستخدم', trainee_id: 'الرقم التدريبي', email: 'البريد الإلكتروني' };
+  const VIA = { username: 'اسم المستخدم', trainee_id: 'الرقم التدريبي', email: 'البريد الإلكتروني' }, ASKED = { trainee: 'متدرب', trainer: 'مدرب', head: 'رئيس القسم' };
   const STAT = { new: ['warn', 'جديد'], link: ['info', 'أُرسل رابط'], done: ['ok', 'اكتمل'], closed: ['', 'مغلق'] };
   VIEWS.pwreq = () => {
     if (!R.list && !R.err) { setTimeout(() => load(true), 0); }
@@ -113,7 +119,7 @@ if (document.getElementById('shell') && window.HAADER_WEB) (() => {
     const L = (R.list || []).filter((x) => R.all || x.status === 'new' || x.status === 'link');
     const row = (x) => {
       const w = x.who || {}, s = STAT[x.status] || ['', x.status], open = x.status === 'new' || x.status === 'link';
-      return `<tr><td class="n" style="white-space:nowrap">${esc(tm(x.at))}</td><td><b>${esc(w.name || '—')}</b><br><small dir="ltr">${esc(w.login || x.ref)}</small></td><td>${esc(ROLE[w.role] || '')}${w.active === false ? ' <span class="chip bad">معطّل</span>' : ''}</td><td>${esc(VIA[x.via] || '')}</td><td dir="ltr" style="text-align:right">${esc(w.email || '—')}</td><td class="n"><span class="chip ${s[0]}">${s[1]}</span></td>
+      return `<tr><td class="n" style="white-space:nowrap">${esc(tm(x.at))}</td><td><b>${esc(w.name || '—')}</b><br><small dir="ltr">${esc(w.login || x.ref)}</small></td><td>${esc(ROLE[w.role] || '')}${w.active === false ? ' <span class="chip bad">معطّل</span>' : ''}</td><td>${esc(VIA[x.via] || '')}${x.asked ? `<br><small>بصفته: ${esc(ASKED[x.asked] || x.asked)}</small>` : ''}</td><td dir="ltr" style="text-align:right">${esc(w.email || '—')}</td><td class="n"><span class="chip ${s[0]}">${s[1]}</span></td>
         <td>${x.action ? `${esc(x.action)}<br><small>${esc(tm(x.action_at))}${x.action_by_name ? ' • ' + esc(x.action_by_name) : ''}</small>` : '<small>لم يُتخذ إجراء بعد</small>'}${x.status === 'link' && x.token_exp ? `<br><small>الرابط صالح حتى ${esc(tm(x.token_exp))}</small>` : ''}</td>
         <td>${open ? `<div class="row"><button class="btn s p" data-act="pwr-link" data-id="${x.id}">${x.status === 'link' ? 'رابط جديد' : 'رابط إعادة تعيين'}</button><button class="btn s" data-act="pwr-close" data-id="${x.id}">إغلاق الطلب</button></div>` : ''}</td></tr>`;
     };

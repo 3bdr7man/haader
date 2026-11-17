@@ -90,3 +90,8 @@ body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
 .tl-t .tln{font-size:12px;color:var(--ink2,#4A5D75)}
 .tlc{display:block;font-size:11.5px;color:var(--warn,#8A5A00)}
 @media print{.tlbar,.tl-ov{display:none!important}}
+
+/* رسالة رفض البريد الإلكتروني */
+.emerr{margin-top:6px;padding:7px 10px;border-radius:10px;font-size:13px;line-height:1.7;color:var(--bad,#B42318);background:color-mix(in srgb,var(--bad,#B42318) 9%,transparent);border:1px solid color-mix(in srgb,var(--bad,#B42318) 30%,transparent)}
+.emerr[hidden]{display:none}
+input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}

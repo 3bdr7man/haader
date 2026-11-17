@@ -73,6 +73,7 @@ if (document.getElementById('shell')) (() => {
   render = function (force) {
     const r = baseRender.apply(this, arguments);
     document.body.classList.toggle('astr', !!A.asTrainer);
+    if (!WEB && !A.emailScrubbed && A.fresh && A.me && isAdmin()) { A.emailScrubbed = true; setTimeout(() => { try { const n = scrubAllEmails(); if (n) toast(`استُبعد البريد المستبعد من ${n} وثيقة في قاعدة البيانات.`); } catch (e) { /* يعاد في الجلسة التالية */ } }, 1200); }
     try { deptLine(); } catch (e) { /* العرض أولاً */ }
     return r;
   };
@@ -81,8 +82,13 @@ if (document.getElementById('shell')) (() => {
      لا يُكتب أي بريد في الشيفرة: كل بريد يُدخله صاحبه أو المسؤول من المنصة، ويُحفظ في قاعدة بياناتها.
      - المسؤول: خانة «البريد الإلكتروني» في نموذج الحساب (مدرب، رئيس قسم، اطلاع، مسؤول)
      - كل مستخدم: زر «بريدي الإلكتروني» في بطاقة الحساب، ويظهر كذلك في نافذة الملف الشخصي
-     - رئيس القسم: خانة بريده في «القسم والتخصصات»، يُرفض فيها البريد غير الصحيح، ويُنبَّه إن كانت فارغة */
-  const emailOk = (v) => !v || EMAIL_RE.test(v);
+     - رئيس القسم: خانة بريده في «القسم والتخصصات»، يُرفض فيها البريد غير الصحيح، ويُنبَّه إن كانت فارغة
+     وفي كل خانة: يُرفض كل بريد ينتهي بـ tvtc.gov.sa، وكل بريد يعود لصاحب المنصة (emailVerdict في النواة) برسالة واضحة */
+  const fieldErr = (el, msg) => {
+    let box = el.parentNode.querySelector('.emerr');
+    if (!box) { box = document.createElement('div'); box.className = 'emerr'; box.setAttribute('role', 'alert'); el.insertAdjacentElement('afterend', box); }
+    box.textContent = msg; box.hidden = false; el.setAttribute('aria-invalid', 'true'); el.focus(); toast(msg);
+  };
 
   /* خانة البريد في نموذج الحساب، بعد اسم المستخدم */
   const baseUserForm = userForm;
@@ -91,16 +97,18 @@ if (document.getElementById('shell')) (() => {
     const un = $('#uU'), host = un && un.closest('label');
     if (!host || $('#uE')) return;
     const lab = document.createElement('label');
-    lab.innerHTML = 'البريد الإلكتروني (اختياري)<input type="email" id="uE" dir="ltr" inputmode="email" autocomplete="off">';
-    lab.querySelector('input').value = (u && u.email) || '';
+    const own = !!(u && isOwnerAcc(u));
+    lab.innerHTML = `البريد الإلكتروني (اختياري)<input type="email" id="uE" dir="ltr" inputmode="email" autocomplete="off" ${own ? 'disabled' : ''}><small class="sub">${own ? 'حساب صاحب المنصة: بريده مستبعد من قاعدة البيانات فلا يُحفظ له بريد.' : 'لا يُقبل بريد ينتهي بـ <span dir="ltr">tvtc.gov.sa</span>.'}</small>`;
+    lab.querySelector('input').value = own ? '' : (u && u.email) || '';
     host.insertAdjacentElement('afterend', lab);
   };
   const baseSaveUser = SUBMIT.saveUser;
   SUBMIT.saveUser = async function () {
     const el = $('#uE');
     if (!el) return baseSaveUser.apply(this, arguments);
-    const v = el.value.trim();
-    if (!emailOk(v)) { toast('اكتب بريداً إلكترونياً صحيحاً، أو اترك الخانة فارغة.'); el.focus(); return; }
+    const v = el.disabled ? '' : emailNorm(el.value);
+    const why = await emailVerdict(v, A.editUser ? A.raw.accounts[A.editUser] : null);
+    if (why) { fieldErr(el, emailWhy(why, v)); return; }
     const id0 = A.editUser, before = id0 ? A.raw.accounts[id0] : null, known = new Set(Object.keys(A.raw.accounts || {}));
     await baseSaveUser.apply(this, arguments);
     /* الحساب الذي حُفظ فعلاً: المعدَّل إن تبدّل كائنه، أو الجديد الذي لم يكن موجوداً. وإلا فالحفظ لم يتم (رسالة تحقق) */
@@ -128,7 +136,13 @@ if (document.getElementById('shell')) (() => {
   /* بريد رئيس القسم في «القسم والتخصصات» */
   const baseOrgF = CHG['org-f'];
   CHG['org-f'] = function (e) {
-    if (e.dataset.k === 'headEmail' && !emailOk(e.value.trim())) { toast('اكتب بريداً إلكترونياً صحيحاً لرئيس القسم، أو اترك الخانة فارغة.'); render(true); return; }
+    if (e.dataset.k === 'headEmail') {
+      const v = emailNorm(e.value); e.value = v;
+      return emailVerdict(v, null).then((why) => {
+        if (why) { const msg = emailWhy(why, v); render(true); const f = $('[data-k="headEmail"]'); if (f) { f.value = v; fieldErr(f, msg); } else toast(msg); return; }
+        baseOrgF.call(this, e); toast('حُفظت بيانات القسم.');
+      });
+    }
     baseOrgF.apply(this, arguments);
     toast('حُفظت بيانات القسم.');
   };
@@ -136,7 +150,7 @@ if (document.getElementById('shell')) (() => {
   VIEWS.org = function () {
     const h = baseOrgView.apply(this, arguments), o = orgInfo();
     const miss = [!o.head && 'اسم رئيس القسم', !o.headEmail && 'بريد رئيس القسم'].filter(Boolean);
-    const note = `<div class="sub" id="orgMailNote" style="margin-top:8px">${miss.length ? `<span class="chip warn">لم يُسجَّل بعد: ${miss.join(' و')}</span> ` : ''}يُحفظ اسم رئيس القسم وبريده في قاعدة بيانات المنصة، ويُضاف بريده نسخةً (CC) في إشعارات الغياب. ويعدّل كل مدرب بريده من «بريدي الإلكتروني» في بطاقة حسابه، ويعدّله المسؤول من «المدربون والصلاحيات».</div>`;
+    const note = `<div class="sub" id="orgMailNote" style="margin-top:8px">${miss.length ? `<span class="chip warn">لم يُسجَّل بعد: ${miss.join(' و')}</span> ` : ''}يُحفظ اسم رئيس القسم وبريده في قاعدة بيانات المنصة، ويُضاف بريده نسخةً (CC) في إشعارات الغياب. ولا يُقبل بريد ينتهي بـ <span dir="ltr">tvtc.gov.sa</span>، فهو مستبعد من قاعدة البيانات. ويعدّل كل مدرب بريده من «بريدي الإلكتروني» في بطاقة حسابه، ويعدّله المسؤول من «المدربون والصلاحيات».</div>`;
     const mark = 'data-k="headEmail"></label></div>';
     return h.includes(mark) ? h.replace(mark, mark + note) : h + note;
   };

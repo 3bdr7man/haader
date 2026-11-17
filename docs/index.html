@@ -769,6 +769,13 @@ body.astr #side{box-shadow:inset -4px 0 0 #F2B544}
 .emerr[hidden]{display:none}
 input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}
 
+/* نسخة Claude للاطلاع: شريط المرآة */
+.mirbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:9px 14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--brand,#0B5394) 25%,var(--line,#D5DEE9));background:color-mix(in srgb,var(--brand,#0B5394) 6%,var(--surface,#fff));font-size:13px;line-height:1.7}
+.mirbar b{font-size:13.5px;color:var(--brand,#0B5394)}
+.mirbar span{flex:1 1 260px;min-width:0;color:var(--ink2,#4A5D75)}
+.mirbar.warn{border-color:color-mix(in srgb,var(--warn,#8A5A00) 40%,var(--line,#D5DEE9));background:color-mix(in srgb,var(--warn,#8A5A00) 8%,var(--surface,#fff))}
+@media print{.mirbar{display:none!important}}
+
 /* خيارات استيراد درجات Excel (مشترك بين نسخة الويب ونسخة Claude) */
 .gxopt{display:grid;gap:10px;margin:14px 0}
 .gxopt .ck{display:flex;gap:8px;align-items:center}
@@ -1008,7 +1015,7 @@ input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}
 </div>
 <div id="toast" role="status" dir="rtl" hidden></div>
 <div id="tip" dir="rtl" hidden></div>
-<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="11a886c491e6";</script>
+<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="ba0111bb01df";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 /* ====================================================================
@@ -1712,7 +1719,7 @@ function badges() {
 }
 function render(force) {
   applySkin();
-  document.body.classList.toggle('ro', isViewer());
+  document.body.classList.toggle('ro', isViewer() || !!A.readOnly);
   if (!A.me && A.got.accounts && !A.triedSession) { A.triedSession = true; restoreSession(); if (A.me) { buildNav(); rebuild(); } }
   if (!A.me) { renderGate(); return; }
   $('#gate').hidden = true; $('#shell').hidden = false;
@@ -1745,7 +1752,8 @@ const secLabel = (s) => `${s.kind === 'عملي' ? 'عملي' : s.course.startsW
 const pastBtn = () => (!can('past') ? '' : A.pastOpen ? '<button class="btn s" data-act="past" data-v="0">إغلاق الأيام السابقة</button>' : '<button class="btn s" data-act="past" data-v="1">السماح بتعديل الأيام السابقة</button>');
 /* ملكية الشعبة: لا يعمل في الشعبة إلا مدربها، ولا يُستثنى المسؤول. الشعبة دون مدرب يتولاها المسؤول إلى أن تُربط. */
 const secOwner = (crn) => { const s = A.raw.sections[crn]; return s && s.trainer && A.raw.accounts[s.trainer] ? s.trainer : ''; };
-const mayEdit = (crn) => { if (!A.me || isViewer() || !A.raw.sections[crn]) return false; const o = secOwner(crn); return o ? o === A.me.id : isAdmin(); };
+/* A.readOnly: نسخة Claude للاطلاع (مرآة للرابط) — لا تعديل فيها */
+const mayEdit = (crn) => { if (!A.me || isViewer() || A.readOnly || !A.raw.sections[crn]) return false; const o = secOwner(crn); return o ? o === A.me.id : isAdmin(); };
 const notMine = (crn) => { const o = secOwner(crn); return `هذه الشعبة لمدربها ${o ? A.raw.accounts[o].name : ''}، وهي لك للاطلاع فقط`; };
 const mineModel = () => (isViewer() ? A.m : Object.assign({}, A.m, { sections: A.m.sections.filter((s) => mayEdit(s.crn)) }));
 const lockWhy = (sec, d, cur) => {

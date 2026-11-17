@@ -59,6 +59,7 @@ const MOCK = `(() => {
   const db = { doc, collection: col };
   window.__DL = [];
   const cap = { db, downloads: { async save({ filename, data }) { let text = ''; try { text = typeof data === 'string' ? data : await data.text(); } catch (e) { text = '[binary]'; } window.__DL.push({ filename, size: (data && data.size) || text.length, text: text.slice(0, 200000), blob: data }); } }, user: { id: async () => window.__UID, isOwner: async () => !!window.__OWNER, can: async () => true, canEdit: async () => true }, assets: null };
+  if (window.__MCP) cap.mcp = window.__MCP;
   window.claude = { use: async (n) => cap[n] || null };
   window.__docs = docs; window.__emit = emit;
 })();`;
@@ -72,6 +73,8 @@ async function open(browser, who, docs, opts = {}) {
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::ERR/.test(m.text())) errs.push('console: ' + m.text().slice(0, 300)); });
   await page.route('**/*', (r) => { const u = r.request().url(); if (u.startsWith('file:')) return r.continue(); if (/xlsx\.full\.min\.js/.test(u)) return r.fulfill({ contentType: 'application/javascript', body: fs.readFileSync(require.resolve('xlsx/dist/xlsx.full.min.js')) }); return r.abort(); });
   const acc = ACC[who];
+  await page.addInitScript((rw) => { window.__HAADER_RW = rw; }, !opts.ro);
+  if (opts.mcp) await page.addInitScript(opts.mcp);
   await page.addInitScript(({ seedDocs, uid, sid, level }) => { window.__SEED = seedDocs; window.__UID = uid; window.__LEVEL = level; try { sessionStorage.setItem('haader.s', JSON.stringify({ id: sid, exp: Date.now() + 3600e3 })); } catch (e) { /* */ } }, { seedDocs: docs, uid: opts.uid === undefined ? 'cu_' + acc.id : opts.uid, sid: acc.id, level: opts.level || 'admin' });
   await page.addInitScript(MOCK);
   await page.goto('file://' + (opts.file || process.env.HAADER_FILE || ROOT + '/index.html'));

@@ -156,6 +156,7 @@ if (document.getElementById('shell')) (() => {
       <section class="tp-card"><h2>التنبيهات</h2>${alerts.length ? `<ul class="tp-alerts">${alerts.map((a) => `<li class="${a[0]}">${esc(a[1])}</li>`).join('')}</ul>` : '<p class="sub">لا تنبيهات. استمر على انتظامك.</p>'}</section>
       ${window.HAADER_TL ? window.HAADER_TL.bar((P.data.meta || {}).timeline, 'tp') : ''}
       ${gradesCards()}
+      ${window.HAADER_ADV ? window.HAADER_ADV.portalCard(P.data.id) : ''}
       ${rows.length ? rows.map((r) => `<section class="tp-card tp-course"><div class="tp-ch"><div><h2>${esc(r.sec.course)}</h2><p class="sub">${esc(r.sec.kind || '')} • الشعبة ${esc(r.sec.crn)}${r.sec.trainerName ? ' • المدرب: ' + esc(r.sec.trainerName) : ''}${(r.sec.meets || []).length ? ' • ' + r.sec.meets.map((x) => esc(x.day + ' ' + x.start)).join('، ') : ''}</p></div><span class="chip ${r.status[1]}">${r.status[0]}</span></div>
         <div class="tp-kpi"><div><b>${r.st.pres + r.st.late}</b><span>حضور</span></div><div><b>${r.st.absent}</b><span>غياب محتسب</span></div><div><b>${hrs(r.absMin)}</b><span>ساعات الغياب</span></div><div><b>${pct(r.st.rate)}</b><span>نسبة الغياب</span></div><div><b>${r.st.late}</b><span>تأخير${r.st.lateMins ? ` (${r.st.lateMins} د)` : ''}</span></div></div>
         <div class="tp-bar" role="img" aria-label="الغياب ${r.st.absent} من حد الحرمان ${r.dep}"><i style="width:${Math.min(100, (r.st.absent / Math.max(1, r.dep)) * 100)}%" class="${r.status[1]}"></i><em style="inset-inline-start:${(r.warn / Math.max(1, r.dep)) * 100}%"></em></div>

@@ -1,0 +1,60 @@
+/* الاستعلام عن المرشد التدريبي (نسخة Claude المبنية، بيانات الإرشاد المحلية). الأسماء مصطنعة. */
+const L = require('./lib');
+if (!process.env.HAADER_FILE) process.env.HAADER_FILE = L.ROOT + '/dist/artifact/index.html';
+let pass = 0, fail = 0;
+const ok = (c, n, x) => { if (c) { pass++; console.log('  ✓ ' + n); } else { fail++; console.log('  ✗ ' + n + (x !== undefined ? '  → ' + JSON.stringify(x).slice(0, 300) : '')); } };
+function withBosla(docs) {
+  const ids = docs['sections/63854'].rows.map((r) => r.id);
+  const t = {}; for (let k = 0; k < 10; k++) t['bosla/t' + k] = { rows: {} };
+  ids.slice(0, 3).forEach((id, i) => { t['bosla/t' + id.slice(-1)].rows[id] = { n: 'متدرب', adv: i === 2 ? '' : (i === 0 ? '0000001' : '0000002'), sp: 'شبكات' }; });
+  t['bosla/t9'].rows['449999999'] = { n: 'متدرب خارج الشعب', adv: '0000001' };
+  Object.assign(docs, t, { 'bosla/adv': { rows: { '0000001': { n: 'مرشد تجريبي أول', acct: '', t: 'مرشد أكاديمي' }, '0000002': { n: 'اسم قديم', acct: 'ut2', t: 'مرشد أكاديمي' } } } });
+  return { ids };
+}
+(async () => {
+  const b = await L.launch();
+  const docs = L.seed(), { ids } = withBosla(docs);
+  const p = await L.open(b, 't1', docs);
+  ok(await p.evaluate(() => !!document.querySelector('#nav a[data-v="advq"]')), 'المدرب: «الاستعلام عن المرشد» في القائمة');
+  await L.view(p, 'advq');
+  const ask = async (v) => { await p.fill('#advqId', v); await p.click('form[data-advq="advq"] button'); await p.waitForFunction(() => { const o = document.getElementById('advqOut'); return o && o.innerText.trim().length > 0; }, null, { timeout: 5000 }); return p.evaluate(() => ({ t: document.getElementById('advqOut').innerText.replace(/\s+/g, ' ').trim(), cls: (document.querySelector('#advqOut .advq-res') || {}).className, inv: document.getElementById('advqId').getAttribute('aria-invalid') })); };
+  let r = await ask('');
+  ok(/اكتب الرقم التدريبي/.test(r.t) && r.inv === 'true', 'الحقل فارغ: رسالة مناسبة', r);
+  r = await ask('44612ab');
+  ok(/غير صالح/.test(r.t) && /9 أرقام/.test(r.t), 'رقم غير صالح (حروف)', r);
+  r = await ask('4461');
+  ok(/غير صالح/.test(r.t), 'رقم غير صالح (قصير)', r);
+  r = await ask('446000000');
+  ok(/لم يُعثر على متدرب/.test(r.t) && /bad/.test(r.cls), 'لا متدرب بهذا الرقم', r);
+  r = await ask(ids[2]);
+  ok(/لا يوجد مرشد تدريبي مسجل/.test(r.t), 'متدرب بلا مرشد', r);
+  r = await ask(ids[5]);
+  ok(/لا يوجد مرشد تدريبي مسجل/.test(r.t), 'متدرب في الشعب وليس في بيانات الإرشاد: لا مرشد مسجل', r);
+  r = await ask(ids[0]);
+  ok(/مرشد تجريبي أول/.test(r.t) && /ok/.test(r.cls) && await p.evaluate(() => document.querySelector('#advqOut .advq-name').textContent === 'مرشد تجريبي أول'), 'رقم صحيح: اسم المرشد بوضوح', r);
+  ok(!/متدرب \d/.test(r.t) && !/تجريبي\s*$/.test('') && !/شبكات/.test(r.t) && !r.t.includes(await p.evaluate((id) => (A.raw.sections['63854'].rows.find((x) => x.id === id) || {}).name, ids[0])), 'لا يُعرض اسم المتدرب ولا تخصصه', r.t);
+  r = await ask(ids[1].replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]));
+  ok(/م\. مدرب ثانٍ/.test(r.t), 'الأرقام العربية مقبولة، واسم المرشد من حسابه في المنصة', r);
+  r = await ask('449999999');
+  ok(/مرشد تجريبي أول/.test(r.t), 'متدرب في بيانات الإرشاد خارج شعب المدرب', r);
+  await p.evaluate(() => render(true)); await p.waitForTimeout(100);
+  ok(/مرشد تجريبي أول/.test(await p.evaluate(() => document.getElementById('advqOut').innerText)), 'النتيجة تبقى بعد إعادة الرسم');
+  const ph = await L.open(b, 'head', docs);
+  ok(await ph.evaluate(() => !!document.querySelector('#nav a[data-v="advq"]')), 'رئيس القسم: النافذة في القائمة');
+  const pa = await L.open(b, 'admin', docs);
+  ok(await pa.evaluate(() => !!document.querySelector('#nav a[data-v="advq"]')), 'مسؤول المنصة: النافذة في القائمة');
+  const pv = await L.open(b, 'viewer', docs);
+  ok(await pv.evaluate(() => !document.querySelector('#nav a[data-v="advq"]') && /للمتدرب والمدرب ورئيس القسم/.test(VIEWS.advq())), 'حساب الاطلاع لا يرى النافذة');
+  /* بوابة المتدرب (معاينة المسؤول) */
+  await pa.evaluate((id) => HAADER_PORTAL.preview(id), ids[0]); await pa.waitForSelector('#tportal .tp-advq', { timeout: 8000 });
+  ok(await pa.evaluate((id) => document.getElementById('tpAdvId').value === id, ids[0]), 'بوابة المتدرب: بطاقة الاستعلام برقمه');
+  await pa.click('form[data-advq="tpAdv"] button'); await pa.waitForFunction(() => /مرشد تجريبي أول/.test((document.getElementById('tpAdvOut') || {}).innerText || ''), null, { timeout: 5000 });
+  ok(true, 'بوابة المتدرب: يظهر اسم مرشده');
+  const m = await L.open(b, 't1', docs, { w: 390, h: 800 });
+  await L.view(m, 'advq');
+  ok(await m.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth <= 1 && !!document.getElementById('advqId')), 'الجوال: بلا تمرير أفقي');
+  await m.screenshot({ path: __dirname + '/out/advisor-phone.png' });
+  ok(![p, ph, pa, pv, m].some((x) => x.errs.length), 'لا أخطاء JavaScript', [p, ph, pa, pv, m].flatMap((x) => x.errs).slice(0, 4));
+  await b.close();
+  console.log(`\n══ الاستعلام عن المرشد: ${pass} ناجح، ${fail} فاشل ══`); process.exit(fail ? 1 : 0);
+})().catch((e) => { console.error('FATAL', e); process.exit(1); });

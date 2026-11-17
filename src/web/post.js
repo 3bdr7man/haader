@@ -30,7 +30,10 @@ if (window.HAADER_WEB) (() => {
       <label>كلمة المرور<input type="password" id="liP" required dir="ltr" autocomplete="current-password"></label>
       <div id="liE" class="err" role="alert" ${flash ? '' : 'hidden'}>${esc(flash)}</div>
       <button class="btn p" id="liB" type="submit">دخول</button></form>
-      <p class="sub gatehelp">نسيت كلمة المرور؟ المتدرب يراجع مدرب المقرر، والمدرب يراجع مسؤول المنصة لإعادة إصدارها.</p>`;
+      <p class="sub gatehelp"><button type="button" class="linkbtn" data-act="pw-forgot">نسيت كلمة المرور؟</button></p>`;
+      /* «نسيت كلمة المرور؟» ورابط إعادة التعيين (src/web/pwreset.js) */
+      const pw = window.HAADER_PW && window.HAADER_PW.gate ? window.HAADER_PW.gate() : null;
+      if (pw) { key = pw.key; inner = pw.inner; }
     } else if (W.phase === 'staff' && A.got.accounts && !A.me) {
       key = 'nolink';
       inner = `<h2>تعذر فتح حسابك</h2><p class="sub">دخلت بنجاح، لكن حساب المنصة المرتبط بك غير موجود أو معطّل. راجع مسؤول المنصة.</p><button class="btn" data-act="web-out">تسجيل الخروج</button>`;

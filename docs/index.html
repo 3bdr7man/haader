@@ -776,6 +776,25 @@ input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}
 .mirbar.warn{border-color:color-mix(in srgb,var(--warn,#8A5A00) 40%,var(--line,#D5DEE9));background:color-mix(in srgb,var(--warn,#8A5A00) 8%,var(--surface,#fff))}
 @media print{.mirbar{display:none!important}}
 
+/* الاستعلام عن المرشد التدريبي */
+.advq-f{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.advq-f label{flex:1 1 220px;max-width:360px}
+.advq-f input{font-size:16px;letter-spacing:.5px}
+.advq-out{margin-top:12px}
+.advq-out:empty{display:none}
+.advq-res{border-radius:14px;padding:12px 14px;border:1px solid var(--line,#D5DEE9);font-size:14px;line-height:1.8}
+.advq-res.ok{display:grid;gap:4px;border-color:color-mix(in srgb,var(--ok,#1E7B4A) 35%,var(--line,#D5DEE9));background:color-mix(in srgb,var(--ok,#1E7B4A) 7%,var(--surface,#fff))}
+.advq-res.ok small{color:var(--ink2,#4A5D75);font-size:12.5px}
+.advq-name{font-size:20px;font-weight:700;color:var(--ink,#13233A)}
+.advq-res.warn{background:color-mix(in srgb,var(--warn,#8A5A00) 9%,transparent);border-color:color-mix(in srgb,var(--warn,#8A5A00) 30%,transparent)}
+.advq-res.bad{background:color-mix(in srgb,var(--bad,#B42318) 8%,transparent);border-color:color-mix(in srgb,var(--bad,#B42318) 30%,transparent);color:var(--bad,#B42318)}
+.advq-res.info{background:color-mix(in srgb,var(--brand,#0B5394) 7%,transparent);border-color:color-mix(in srgb,var(--brand,#0B5394) 25%,transparent)}
+input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}
+/* «نسيت كلمة المرور؟» */
+.linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--brand,#0B5394);text-decoration:underline;cursor:pointer}
+.okbox{border-radius:12px;padding:12px 14px;margin:10px 0;line-height:1.9;font-size:14px;background:color-mix(in srgb,var(--ok,#1E7B4A) 8%,var(--surface,#fff));border:1px solid color-mix(in srgb,var(--ok,#1E7B4A) 30%,var(--line,#D5DEE9))}
+#gate .linkbtn{color:inherit;opacity:.92;text-underline-offset:3px}
+
 /* خيارات استيراد درجات Excel (مشترك بين نسخة الويب ونسخة Claude) */
 .gxopt{display:grid;gap:10px;margin:14px 0}
 .gxopt .ck{display:flex;gap:8px;align-items:center}
@@ -1015,7 +1034,7 @@ input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}
 </div>
 <div id="toast" role="status" dir="rtl" hidden></div>
 <div id="tip" dir="rtl" hidden></div>
-<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="ba0111bb01df";</script>
+<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="27f01c117ce0";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 /* ====================================================================
@@ -6597,7 +6616,10 @@ if (window.HAADER_WEB) (() => {
       <label>كلمة المرور<input type="password" id="liP" required dir="ltr" autocomplete="current-password"></label>
       <div id="liE" class="err" role="alert" ${flash ? '' : 'hidden'}>${esc(flash)}</div>
       <button class="btn p" id="liB" type="submit">دخول</button></form>
-      <p class="sub gatehelp">نسيت كلمة المرور؟ المتدرب يراجع مدرب المقرر، والمدرب يراجع مسؤول المنصة لإعادة إصدارها.</p>`;
+      <p class="sub gatehelp"><button type="button" class="linkbtn" data-act="pw-forgot">نسيت كلمة المرور؟</button></p>`;
+      /* «نسيت كلمة المرور؟» ورابط إعادة التعيين (src/web/pwreset.js) */
+      const pw = window.HAADER_PW && window.HAADER_PW.gate ? window.HAADER_PW.gate() : null;
+      if (pw) { key = pw.key; inner = pw.inner; }
     } else if (W.phase === 'staff' && A.got.accounts && !A.me) {
       key = 'nolink';
       inner = `<h2>تعذر فتح حسابك</h2><p class="sub">دخلت بنجاح، لكن حساب المنصة المرتبط بك غير موجود أو معطّل. راجع مسؤول المنصة.</p><button class="btn" data-act="web-out">تسجيل الخروج</button>`;
@@ -7019,6 +7041,7 @@ if (document.getElementById('shell')) (() => {
       <section class="tp-card"><h2>التنبيهات</h2>${alerts.length ? `<ul class="tp-alerts">${alerts.map((a) => `<li class="${a[0]}">${esc(a[1])}</li>`).join('')}</ul>` : '<p class="sub">لا تنبيهات. استمر على انتظامك.</p>'}</section>
       ${window.HAADER_TL ? window.HAADER_TL.bar((P.data.meta || {}).timeline, 'tp') : ''}
       ${gradesCards()}
+      ${window.HAADER_ADV ? window.HAADER_ADV.portalCard(P.data.id) : ''}
       ${rows.length ? rows.map((r) => `<section class="tp-card tp-course"><div class="tp-ch"><div><h2>${esc(r.sec.course)}</h2><p class="sub">${esc(r.sec.kind || '')} • الشعبة ${esc(r.sec.crn)}${r.sec.trainerName ? ' • المدرب: ' + esc(r.sec.trainerName) : ''}${(r.sec.meets || []).length ? ' • ' + r.sec.meets.map((x) => esc(x.day + ' ' + x.start)).join('، ') : ''}</p></div><span class="chip ${r.status[1]}">${r.status[0]}</span></div>
         <div class="tp-kpi"><div><b>${r.st.pres + r.st.late}</b><span>حضور</span></div><div><b>${r.st.absent}</b><span>غياب محتسب</span></div><div><b>${hrs(r.absMin)}</b><span>ساعات الغياب</span></div><div><b>${pct(r.st.rate)}</b><span>نسبة الغياب</span></div><div><b>${r.st.late}</b><span>تأخير${r.st.lateMins ? ` (${r.st.lateMins} د)` : ''}</span></div></div>
         <div class="tp-bar" role="img" aria-label="الغياب ${r.st.absent} من حد الحرمان ${r.dep}"><i style="width:${Math.min(100, (r.st.absent / Math.max(1, r.dep)) * 100)}%" class="${r.status[1]}"></i><em style="inset-inline-start:${(r.warn / Math.max(1, r.dep)) * 100}%"></em></div>
@@ -7217,6 +7240,254 @@ if (document.getElementById('shell')) (() => {
     return r;
   };
   window.HAADER_TL = { bar, full, state, picks, today: () => days().day };
+})();
+
+/* ====================================================================
+   الاستعلام عن المرشد التدريبي برقم المتدرب التدريبي
+   - المدرب ورئيس القسم ومسؤول المنصة: نافذة «الاستعلام عن المرشد» في القائمة (الأدوات)
+   - المتدرب: بطاقة في بوابته
+   لا يُعرض إلا اسم المرشد. الحالات: الحقل فارغ، رقم غير صالح، لا متدرب بهذا الرقم، لا مرشد مسجل.
+   المصدر: في الويب advisor_lookup على الخادم، وفي نسخة Claude بيانات الإرشاد في قاعدة بياناتها.
+   ==================================================================== */
+if (document.getElementById('shell')) (() => {
+  const W = window.HAADER_WEB || null;
+  const DIG = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9', '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9' };
+  const norm = (v) => String(v == null ? '' : v).replace(/\s+/g, '').replace(/[٠-٩۰-۹]/g, (c) => DIG[c]);
+  const check = (v) => (!v ? 'empty' : /^\d{9}$/.test(v) ? null : 'invalid');
+  /* نسخة Claude: من بيانات الإرشاد والكشوف المحلية */
+  function local(t) {
+    const B = (A.raw && A.raw.bosla) || {}, r = ((B['t' + t.slice(-1)] || {}).rows || {})[t];
+    if (!r) {
+      const inSec = ['sections', 'gsec'].some((c) => Object.values((A.raw && A.raw[c]) || {}).some((s) => (s.rows || []).some((x) => x.id === t)));
+      return { st: inSec ? 'no_advisor' : 'not_found' };
+    }
+    if (!r.adv) return { st: 'no_advisor' };
+    const a = ((B.adv || {}).rows || {})[r.adv];
+    if (!a) return { st: 'no_advisor' };
+    const acc = a.acct ? ((A.raw.accounts || {})[a.acct] || {}) : {};
+    const name = String(acc.name || a.n || '').trim();
+    return name ? { st: 'ok', name } : { st: 'no_advisor' };
+  }
+  async function lookup(raw) {
+    const t = norm(raw), bad = check(t);
+    if (bad) return { st: bad, id: t };
+    try {
+      const r = W ? await W.rpc('advisor_lookup', { p_id: t }) : local(t);
+      return Object.assign({ id: t }, r && r.st ? r : { st: 'error' });
+    } catch (e) { return { st: 'error', id: t, msg: (e && e.message) || '' }; }
+  }
+  const MSG = {
+    empty: ['warn', 'اكتب الرقم التدريبي للمتدرب أولاً.'],
+    invalid: ['warn', 'الرقم التدريبي غير صالح: يتكون من 9 أرقام دون حروف أو رموز.'],
+    not_found: ['bad', 'لم يُعثر على متدرب بهذا الرقم التدريبي. تحقق من الرقم وأعد البحث.'],
+    no_advisor: ['info', 'لا يوجد مرشد تدريبي مسجل لهذا المتدرب حتى الآن. راجع رئيس القسم.'],
+    error: ['bad', 'تعذّر الاستعلام الآن. تحقق من الاتصال وأعد المحاولة.']
+  };
+  function resultHTML(r) {
+    if (!r) return '';
+    if (r.st === 'ok') return `<div class="advq-res ok"><small>المرشد التدريبي للمتدرب صاحب الرقم <span dir="ltr">${esc(r.id)}</span></small><b class="advq-name">${esc(r.name)}</b></div>`;
+    const m = MSG[r.st] || MSG.error;
+    return `<div class="advq-res ${m[0]}">${esc(m[1])}</div>`;
+  }
+  const formHTML = (pre, val, res, busy) => `<form class="advq-f" data-advq="${pre}" novalidate><label>الرقم التدريبي<input type="text" id="${pre}Id" inputmode="numeric" dir="ltr" maxlength="14" autocomplete="off" placeholder="مثال: 446000000" value="${esc(val || '')}" aria-describedby="${pre}Out"></label><button class="btn p" ${busy ? 'disabled' : ''}>${busy ? 'جارٍ البحث…' : 'بحث'}</button></form><div id="${pre}Out" class="advq-out" role="status" aria-live="polite">${resultHTML(res)}</div>`;
+
+  /* ---------- المدرب ورئيس القسم ومسؤول المنصة: نافذة في القائمة ---------- */
+  const S = { val: '', res: null, busy: false };
+  const allowed = () => !!(A.me && !isViewer());
+  NAV.forEach(([g, items]) => { if (g === 'الأدوات' && !items.some((x) => x[0] === 'advq')) items.unshift(['advq', 'الاستعلام عن المرشد']); });
+  const baseNav = buildNav;
+  buildNav = function () { baseNav.apply(this, arguments); if (!allowed()) { const a = document.querySelector('#nav a[data-v="advq"]'); if (a) a.remove(); } };
+  VIEWS.advq = () => {
+    if (!allowed()) return '<div class="panel empty"><h2>الاستعلام عن المرشد</h2><p>هذه النافذة للمتدرب والمدرب ورئيس القسم.</p></div>';
+    return `<div class="head hero"><div><h1>الاستعلام عن المرشد التدريبي</h1><div class="sub">اكتب الرقم التدريبي للمتدرب ثم اضغط «بحث» لمعرفة مرشده التدريبي.</div></div></div>
+    <section class="panel advq">${formHTML('advq', S.val, S.res, S.busy)}</section>`;
+  };
+  /* ---------- المتدرب: بطاقة في بوابته ---------- */
+  const T = { val: null, res: null, busy: false };
+  function portalCard(myId) {
+    if (T.val === null) T.val = myId || '';
+    return `<section class="tp-card advq tp-advq"><h2>الاستعلام عن المرشد التدريبي</h2><p class="sub">اكتب الرقم التدريبي ثم اضغط «بحث».</p>${formHTML('tpAdv', T.val, T.res, T.busy)}</section>`;
+  }
+  async function run(pre) {
+    const st = pre === 'advq' ? S : T, inp = document.getElementById(pre + 'Id');
+    st.val = inp ? inp.value : st.val; st.busy = true; repaint(pre);
+    st.res = await lookup(st.val); st.busy = false; repaint(pre);
+    const out = document.getElementById(pre + 'Out'), i2 = document.getElementById(pre + 'Id');
+    if (i2 && st.res && st.res.st !== 'ok') { i2.setAttribute('aria-invalid', 'true'); i2.focus(); }
+    if (out) out.scrollIntoView({ block: 'nearest' });
+  }
+  function repaint(pre) {
+    const f = document.querySelector(`form[data-advq="${pre}"]`); if (!f) return;
+    const st = pre === 'advq' ? S : T, out = document.getElementById(pre + 'Out'), btn = f.querySelector('button');
+    if (btn) { btn.disabled = st.busy; btn.textContent = st.busy ? 'جارٍ البحث…' : 'بحث'; }
+    if (out) out.innerHTML = st.busy ? '' : resultHTML(st.res);
+  }
+  document.addEventListener('submit', (ev) => {
+    const f = ev.target.closest && ev.target.closest('form[data-advq]'); if (!f) return;
+    ev.preventDefault(); ev.stopPropagation(); run(f.dataset.advq);
+  }, true);
+  document.addEventListener('input', (ev) => { const i = ev.target; if (i && (i.id === 'advqId' || i.id === 'tpAdvId')) { (i.id === 'advqId' ? S : T).val = i.value; i.removeAttribute('aria-invalid'); } });
+  window.HAADER_ADV = { lookup, portalCard, norm, check, local };
+})();
+
+/* ====================================================================
+   «نسيت كلمة المرور؟» (نسخة الويب: الدخول وكلمات المرور فيها وحدها)
+   - صفحة الدخول: طلب باسم المستخدم أو الرقم التدريبي أو البريد المرتبط بالحساب. الرد واحد دائماً
+     فلا يُكشف هل الحساب مسجل. يصل الطلب إلى مسؤول المنصة.
+   - مسؤول المنصة: نافذة «طلبات كلمة المرور» بوقت الطلب والإجراء المتخذ ومنفّذه. المعالجة برابط
+     إعادة تعيين لمرة واحدة محدود المدة يُرسل إلى بريد صاحب الحساب (لا كلمة مرور في أي رسالة)،
+     أو بإغلاق الطلب بالإجراء المتخذ.
+   - صاحب الرابط: يعيّن كلمة مرور جديدة بنفسه؛ تصل إلى الخادم بصمة PBKDF2 لا الكلمة.
+   الخادم: supabase/11_pw_reset.sql
+   ==================================================================== */
+if (document.getElementById('shell') && window.HAADER_WEB) (() => {
+  const W = window.HAADER_WEB;
+  const F = { mode: '', sent: false, err: '', busy: false, token: '', check: null, done: '' };
+  const mt = /(?:^#|&)reset=([0-9a-f]{64})(?:&|$)/.exec(location.hash || '');
+  if (mt) {
+    F.mode = 'reset'; F.token = mt[1];
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* يبقى الرمز في الذاكرة */ }
+  }
+  const refresh = () => { try { if (window.HAADER_WEB_RENDER) window.HAADER_WEB_RENDER(); else render(true); } catch (e) { /* */ } };
+  const back = '<p class="sub gatehelp"><button type="button" class="linkbtn" data-act="pw-back">العودة إلى تسجيل الدخول</button></p>';
+  const tm = (iso) => { try { return new Date(iso).toLocaleString('ar-SA-u-nu-latn-ca-gregory', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Riyadh' }); } catch (e) { return String(iso || ''); } };
+
+  function gate() {
+    if (F.mode === 'forgot') {
+      if (F.sent) return { key: 'pw-sent', inner: `<h2>استلمنا طلبك</h2><div class="okbox" role="status">إن كان ما كتبته مرتبطاً بحساب في المنصة فقد وصل طلبك إلى مسؤول المنصة، وسيتولى متابعة حالتك. يصلك على بريدك المسجل رابط آمن لمرة واحدة تعيّن به كلمة مرور جديدة بنفسك. لن تُرسل إليك كلمة مرور في أي رسالة.</div>${back}` };
+      return { key: 'pw-forgot' + (F.busy ? 'b' : '') + (F.err ? 'e' + F.err.length : ''), inner: `<h2>نسيت كلمة المرور؟</h2><p class="sub">اكتب اسم المستخدم أو الرقم التدريبي أو البريد الإلكتروني المرتبط بحسابك، ثم أرسل الطلب إلى مسؤول المنصة.</p>
+        <form class="stack" data-pwf novalidate><label>اسم المستخدم أو الرقم التدريبي أو البريد<input type="text" id="pfU" dir="ltr" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="200" value="${esc(F.v || '')}"></label>
+        <div id="pfE" class="err" role="alert" ${F.err ? '' : 'hidden'}>${esc(F.err)}</div>
+        <button class="btn p" id="pfB" type="submit" ${F.busy ? 'disabled' : ''}>${F.busy ? 'جارٍ الإرسال…' : 'إرسال الطلب'}</button></form>${back}` };
+    }
+    if (F.mode === 'reset') {
+      if (F.done) return { key: 'pw-done', inner: `<h2>تغيّرت كلمة المرور</h2><div class="okbox" role="status">عُيّنت كلمة المرور الجديدة للحساب <b dir="ltr">${esc(F.done)}</b>. سجّل الدخول بها الآن.</div><p class="sub gatehelp"><button type="button" class="btn p" data-act="pw-back">تسجيل الدخول</button></p>` };
+      const c = F.check;
+      if (!c) return { key: 'pw-check', inner: '<h2>إعادة تعيين كلمة المرور</h2><p class="sub">جارٍ التحقق من الرابط…</p><div class="gspin" aria-hidden="true"></div>' };
+      if (!c.ok) {
+        const why = c.why === 'used' ? 'استُخدم هذا الرابط من قبل.' : c.why === 'expired' ? 'انتهت صلاحية هذا الرابط.' : c.why === 'net' ? 'تعذر التحقق من الرابط الآن. تحقق من الاتصال وأعد فتحه.' : 'هذا الرابط غير صالح.';
+        return { key: 'pw-bad' + c.why, inner: `<h2>إعادة تعيين كلمة المرور</h2><div class="err" role="alert">${why}</div><p class="sub">اطلب رابطاً جديداً من «نسيت كلمة المرور؟».</p><p class="sub gatehelp"><button type="button" class="btn" data-act="pw-forgot">طلب جديد</button> <button type="button" class="linkbtn" data-act="pw-back">العودة إلى تسجيل الدخول</button></p>` };
+      }
+      return { key: 'pw-reset' + (F.busy ? 'b' : '') + (F.err ? 'e' + F.err.length : ''), inner: `<h2>تعيين كلمة مرور جديدة</h2><p class="sub">للحساب <b dir="ltr">${esc(c.login || '')}</b>. الرابط صالح مرة واحدة حتى ${esc(tm(c.exp))}.</p>
+        <form class="stack" data-pwr novalidate><label>كلمة المرور الجديدة (8 أحرف فأكثر)<input type="password" id="prN" dir="ltr" autocomplete="new-password" minlength="8"></label><label>تأكيد كلمة المرور<input type="password" id="prR" dir="ltr" autocomplete="new-password" minlength="8"></label>
+        <div id="prE" class="err" role="alert" ${F.err ? '' : 'hidden'}>${esc(F.err)}</div>
+        <button class="btn p" id="prB" type="submit" ${F.busy ? 'disabled' : ''}>${F.busy ? 'جارٍ الحفظ…' : 'حفظ كلمة المرور'}</button></form>${back}` };
+    }
+    return null;
+  }
+  async function checkToken() {
+    try { F.check = await W.rpc('pw_reset_check', { p_token: F.token }); } catch (e) { F.check = { ok: false, why: 'net' }; }
+    refresh();
+  }
+  if (F.mode === 'reset') checkToken();
+  /* فتح رابط آخر والصفحة مفتوحة (تغيّر الجزء بعد # دون إعادة تحميل) */
+  window.addEventListener('hashchange', () => {
+    const m2 = /(?:^#|&)reset=([0-9a-f]{64})(?:&|$)/.exec(location.hash || ''); if (!m2) return;
+    Object.assign(F, { mode: 'reset', token: m2[1], check: null, done: '', err: '', busy: false, sent: false });
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* */ }
+    refresh(); checkToken();
+  });
+
+  ACT['pw-forgot'] = () => { F.mode = 'forgot'; F.sent = false; F.err = ''; F.v = ''; refresh(); setTimeout(() => { const u = document.getElementById('pfU'); if (u) u.focus(); }, 30); };
+  ACT['pw-back'] = () => { F.mode = ''; F.sent = false; F.err = ''; F.token = ''; F.check = null; F.done = ''; refresh(); };
+
+  document.addEventListener('submit', async (ev) => {
+    const f = ev.target;
+    if (f.matches && f.matches('form[data-pwf]')) {
+      ev.preventDefault(); ev.stopPropagation();
+      const v = String($('#pfU').value || '').trim(); F.v = v;
+      if (!v) { F.err = 'اكتب اسم المستخدم أو الرقم التدريبي أو البريد الإلكتروني.'; refresh(); return; }
+      F.busy = true; F.err = ''; refresh();
+      try { await W.rpc('pw_reset_request', { p_login: v }); F.sent = true; F.v = ''; }
+      catch (e) { F.err = 'تعذر إرسال الطلب الآن. تحقق من الاتصال وأعد المحاولة.'; }
+      F.busy = false; refresh();
+      return;
+    }
+    if (f.matches && f.matches('form[data-pwr]')) {
+      ev.preventDefault(); ev.stopPropagation();
+      const n = $('#prN').value, r = $('#prR').value, login = (F.check && F.check.login) || '';
+      const fail = (t) => { F.err = t; F.busy = false; refresh(); };
+      if (n.length < 8) return fail('كلمة المرور 8 أحرف على الأقل.');
+      if (n !== r) return fail('كلمتا المرور غير متطابقتين.');
+      if (/^\d+$/.test(n) || n.toLowerCase() === login.toLowerCase()) return fail('اختر كلمة مرور لا تكون أرقاماً فقط ولا اسم المستخدم أو الرقم التدريبي.');
+      F.busy = true; F.err = ''; refresh();
+      try {
+        const salt = Array.from(crypto.getRandomValues(new Uint8Array(16)), (x) => x.toString(16).padStart(2, '0')).join('');
+        const hash = await W.pbkdf2(n, salt, 150000);
+        const res = await W.rpc('pw_reset_finish', { p_token: F.token, p_salt: salt, p_iter: 150000, p_hash: hash });
+        F.done = (res && res.login) || login; F.token = ''; F.busy = false; refresh();
+      } catch (e) { fail((e && e.message) || 'لم تُحفظ كلمة المرور. أعد المحاولة.'); }
+    }
+  }, true);
+
+  /* ---------- مسؤول المنصة: طلبات كلمة المرور ---------- */
+  const R = { list: null, at: 0, err: '', all: false, busy: false, told: false };
+  NAV.forEach(([g, items]) => { if (g === 'الإدارة' && !items.some((x) => x[0] === 'pwreq')) items.splice(1, 0, ['pwreq', 'طلبات كلمة المرور', 'admin']); });
+  ADMIN_VIEWS.add('pwreq');
+  NAV_BADGE.pwreq = () => (R.list || []).filter((x) => x.status === 'new').length;
+  async function load(force) {
+    if (!A.me || !isAdmin() || R.busy) return;
+    if (!force && R.list && Date.now() - R.at < 20000) return;
+    R.busy = true;
+    try { R.list = await W.rpc('pw_reset_list', {}); R.err = ''; } catch (e) { R.err = (e && e.message) || 'تعذر تحميل الطلبات.'; }
+    R.at = Date.now(); R.busy = false;
+    const n = NAV_BADGE.pwreq();
+    if (n && !R.told) { R.told = true; toast(`وصل ${n === 1 ? 'طلب' : n + ' طلبات'} لاستعادة كلمة المرور. راجعها من «طلبات كلمة المرور».`); }
+    try { badges(); if (A.view === 'pwreq') render(true); } catch (e) { /* */ }
+  }
+  setInterval(() => { if (!document.hidden) load(true); }, 120000);
+  const ROLE = { admin: 'مسؤول المنصة', head: 'رئيس القسم', trainer: 'مدرب', viewer: 'حساب اطلاع', trainee: 'متدرب' };
+  const VIA = { username: 'اسم المستخدم', trainee_id: 'الرقم التدريبي', email: 'البريد الإلكتروني' };
+  const STAT = { new: ['warn', 'جديد'], link: ['info', 'أُرسل رابط'], done: ['ok', 'اكتمل'], closed: ['', 'مغلق'] };
+  VIEWS.pwreq = () => {
+    if (!R.list && !R.err) { setTimeout(() => load(true), 0); }
+    else setTimeout(() => load(false), 0);
+    const L = (R.list || []).filter((x) => R.all || x.status === 'new' || x.status === 'link');
+    const row = (x) => {
+      const w = x.who || {}, s = STAT[x.status] || ['', x.status], open = x.status === 'new' || x.status === 'link';
+      return `<tr><td class="n" style="white-space:nowrap">${esc(tm(x.at))}</td><td><b>${esc(w.name || '—')}</b><br><small dir="ltr">${esc(w.login || x.ref)}</small></td><td>${esc(ROLE[w.role] || '')}${w.active === false ? ' <span class="chip bad">معطّل</span>' : ''}</td><td>${esc(VIA[x.via] || '')}</td><td dir="ltr" style="text-align:right">${esc(w.email || '—')}</td><td class="n"><span class="chip ${s[0]}">${s[1]}</span></td>
+        <td>${x.action ? `${esc(x.action)}<br><small>${esc(tm(x.action_at))}${x.action_by_name ? ' • ' + esc(x.action_by_name) : ''}</small>` : '<small>لم يُتخذ إجراء بعد</small>'}${x.status === 'link' && x.token_exp ? `<br><small>الرابط صالح حتى ${esc(tm(x.token_exp))}</small>` : ''}</td>
+        <td>${open ? `<div class="row"><button class="btn s p" data-act="pwr-link" data-id="${x.id}">${x.status === 'link' ? 'رابط جديد' : 'رابط إعادة تعيين'}</button><button class="btn s" data-act="pwr-close" data-id="${x.id}">إغلاق الطلب</button></div>` : ''}</td></tr>`;
+    };
+    return `<div class="head hero"><div><h1>طلبات استعادة كلمة المرور</h1><div class="sub">تصل من «نسيت كلمة المرور؟» في صفحة الدخول. لا تُرسل كلمة مرور في أي رسالة: أنشئ رابط إعادة تعيين لمرة واحدة وأرسله إلى بريد صاحب الحساب، فيعيّن كلمته بنفسه.</div></div><div class="row"><button class="btn" data-act="pwr-reload">تحديث</button></div></div>
+    <section class="panel"><div class="row between"><h2 style="margin:0">${R.all ? 'كل الطلبات' : 'الطلبات المفتوحة'}</h2><label class="ck"><input type="checkbox" data-change="pwr-all" ${R.all ? 'checked' : ''}> عرض المكتمل والمغلق</label></div>
+    ${R.err ? `<div class="chip bad" style="margin-top:8px">${esc(R.err)}</div>` : ''}
+    ${!R.list && !R.err ? '<p class="sub">جارٍ التحميل…</p>' : L.length ? `<div class="tw"><table><thead><tr><th class="n">وقت الطلب</th><th>الحساب</th><th>النوع</th><th>طُلب بـ</th><th>البريد المسجل</th><th class="n">الحالة</th><th>الإجراء المتخذ</th><th></th></tr></thead><tbody>${L.map(row).join('')}</tbody></table></div>` : '<p class="sub">لا توجد طلبات.</p>'}</section>`;
+  };
+  CHG['pwr-all'] = (e) => { R.all = e.checked; render(true); };
+  ACT['pwr-reload'] = () => load(true);
+  ACT['pwr-link'] = async (e) => {
+    const id = +e.dataset.id, x = (R.list || []).find((r) => r.id === id); if (!x) return;
+    let res;
+    try { res = await W.rpc('pw_reset_link', { p_id: id, p_hours: 24 }); } catch (err) { toast((err && err.message) || 'تعذر إنشاء الرابط.'); return; }
+    const w = res.who || {}, link = location.origin + location.pathname + '#reset=' + res.token;
+    const body = `السلام عليكم ${w.name || ''}،\n\nوصلنا طلب استعادة كلمة المرور لحسابك في منصة حاضر (${w.login || ''}).\nلتعيين كلمة مرور جديدة افتح الرابط التالي، وهو صالح مرة واحدة حتى ${tm(res.exp)}:\n${link}\n\nإن لم تطلب ذلك فتجاهل هذه الرسالة وأبلغ مسؤول المنصة. لا نرسل كلمات المرور في الرسائل.\n\n${A.me.name || ''}\nمسؤول منصة حاضر — ${COLLEGE}`;
+    const mail = w.email ? 'mailto:' + encodeURIComponent(w.email) + '?subject=' + encodeURIComponent('منصة حاضر: رابط إعادة تعيين كلمة المرور') + '&body=' + encodeURIComponent(body) : '';
+    A.pwrLink = link;
+    modal(`<h2>رابط إعادة تعيين كلمة المرور</h2><p class="sub">للحساب <b>${esc(w.name || '')}</b> (<span dir="ltr">${esc(w.login || '')}</span>). صالح مرة واحدة حتى ${esc(tm(res.exp))}، ويُلغي أي رابط سابق للحساب.</p>
+      <label>الرابط<input type="text" id="pwrL" dir="ltr" readonly value="${esc(link)}"></label>
+      <div class="sub">يظهر الرابط هذه المرة فقط. ${w.email ? `أرسله إلى البريد المسجل <span dir="ltr">${esc(w.email)}</span>.` : 'لا بريد مسجل لهذا الحساب: انسخ الرابط وسلّمه لصاحبه مباشرة.'}</div>
+      <div class="row">${mail ? `<a class="btn p" href="${esc(mail)}">فتح رسالة إلى بريده</a>` : ''}<button type="button" class="btn" data-act="pwr-copy">نسخ الرابط</button><button type="button" class="btn" data-act="modal-close">إغلاق</button></div>`);
+    load(true);
+  };
+  ACT['pwr-copy'] = () => { copyText(A.pwrLink || '', 'نُسخ الرابط.'); };
+  ACT['pwr-close'] = (e) => {
+    const id = +e.dataset.id, x = (R.list || []).find((r) => r.id === id); if (!x) return;
+    A.pwrId = id;
+    modal(`<h2>إغلاق طلب استعادة كلمة المرور</h2><p class="sub">${esc((x.who || {}).name || '')} (<span dir="ltr">${esc((x.who || {}).login || x.ref)}</span>)</p>
+      <form data-submit="pwrClose" class="stack"><label>الإجراء المتخذ<select id="pwrA"><option>عولج بإصدار كلمة مرور مؤقتة سُلّمت لصاحب الحساب مباشرة</option><option>تواصل صاحب الحساب وتذكّر كلمة مروره</option><option>طلب مكرر</option><option>الحساب معطل أو غير مستحق</option><option value="">أخرى (اكتبها)</option></select></label>
+      <label>ملاحظة (اختيارية)<input type="text" id="pwrN" maxlength="200"></label><div class="row"><button class="btn p">إغلاق الطلب</button><button type="button" class="btn" data-act="modal-close">إلغاء</button></div></form>`);
+  };
+  SUBMIT.pwrClose = async () => {
+    const a = [$('#pwrA').value, $('#pwrN').value.trim()].filter(Boolean).join(' — ');
+    if (!a) { toast('اكتب الإجراء المتخذ.'); return; }
+    try { await W.rpc('pw_reset_close', { p_id: A.pwrId, p_action: a }); closeModal(); toast('أُغلق الطلب وسُجّل الإجراء.'); load(true); }
+    catch (e) { toast((e && e.message) || 'لم يُغلق الطلب.'); }
+  };
+  /* عند دخول المسؤول: تحميل الطلبات للتنبيه والعدّاد */
+  const baseRender = render;
+  render = function () { const r = baseRender.apply(this, arguments); if (A.me && isAdmin() && !R.list && !R.busy && !R.err) setTimeout(() => load(true), 300); return r; };
+  window.HAADER_PW = { gate, F, R, load };
 })();
 
 /* ====================================================================

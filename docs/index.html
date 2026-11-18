@@ -1044,7 +1044,7 @@ input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}
 </div>
 <div id="toast" role="status" dir="rtl" hidden></div>
 <div id="tip" dir="rtl" hidden></div>
-<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="da5a474418d2";</script>
+<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="a2e366267785";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 /* ====================================================================
@@ -1748,7 +1748,7 @@ function badges() {
 }
 function render(force) {
   applySkin();
-  document.body.classList.toggle('ro', isViewer() || !!A.readOnly);
+  document.body.classList.toggle('ro', isViewer() || (!!A.readOnly && !(A.wtOn && A.wtOn())));
   if (!A.me && A.got.accounts && !A.triedSession) { A.triedSession = true; restoreSession(); if (A.me) { buildNav(); rebuild(); } }
   if (!A.me) { renderGate(); return; }
   $('#gate').hidden = true; $('#shell').hidden = false;
@@ -1781,8 +1781,8 @@ const secLabel = (s) => `${s.kind === 'عملي' ? 'عملي' : s.course.startsW
 const pastBtn = () => (!can('past') ? '' : A.pastOpen ? '<button class="btn s" data-act="past" data-v="0">إغلاق الأيام السابقة</button>' : '<button class="btn s" data-act="past" data-v="1">السماح بتعديل الأيام السابقة</button>');
 /* ملكية الشعبة: لا يعمل في الشعبة إلا مدربها، ولا يُستثنى المسؤول. الشعبة دون مدرب يتولاها المسؤول إلى أن تُربط. */
 const secOwner = (crn) => { const s = A.raw.sections[crn]; return s && s.trainer && A.raw.accounts[s.trainer] ? s.trainer : ''; };
-/* A.readOnly: نسخة Claude للاطلاع (مرآة للرابط) — لا تعديل فيها */
-const mayEdit = (crn) => { if (!A.me || isViewer() || A.readOnly || !A.raw.sections[crn]) return false; const o = secOwner(crn); return o ? o === A.me.id : isAdmin(); };
+/* A.readOnly: نسخة Claude للاطلاع (مرآة للرابط) — لا تعديل فيها، عدا صفحة «مزامنة رايات» لصاحب المنصة (A.wtOn) */
+const mayEdit = (crn) => { if (!A.me || isViewer() || (A.readOnly && !(A.wtOn && A.wtOn())) || !A.raw.sections[crn]) return false; const o = secOwner(crn); return o ? o === A.me.id : isAdmin(); };
 const notMine = (crn) => { const o = secOwner(crn); return `هذه الشعبة لمدربها ${o ? A.raw.accounts[o].name : ''}، وهي لك للاطلاع فقط`; };
 const mineModel = () => (isViewer() ? A.m : Object.assign({}, A.m, { sections: A.m.sections.filter((s) => mayEdit(s.crn)) }));
 const lockWhy = (sec, d, cur) => {

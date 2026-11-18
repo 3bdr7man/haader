@@ -23,7 +23,7 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
   const KEEP = { meta: ['qrkey', 'audit', 'mirror', 'emailblock'] };   // خاصة بنسخة Claude لا تُستبدل ولا تُحذف
   const kept = (c, id) => (KEEP[c] || []).includes(id);
   A.readOnly = !window.__HAADER_RW;
-  const M = { mcp: null, state: 'init', code: '', at: null, n: 0, busy: false, tried: false, sig: '' };
+  const M = { mcp: null, state: 'init', code: '', at: null, n: 0, busy: false, tried: false, sig: '', owner: false };
   const colsSql = () => COLS.map((c) => "'" + c + "'").join(',');
   const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
   /* نتيجة execute_sql: نص يضم مصفوفة JSON بين وسمي untrusted-data */
@@ -101,6 +101,7 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
     else if (M.state === 'pulling' || (M.state === 'init' && !M.tried)) msg = 'جارٍ جلب آخر البيانات من الرابط…';
     else if (M.state === 'err') { msg = WHY[M.code] || 'تعذّر الوصول إلى الرابط الآن. تبقى آخر بيانات جُلبت ظاهرة.'; cls = ' warn'; }
     else msg = `تُجلب البيانات من الرابط تلقائياً خلال ثوانٍ من أي تعديل فيه${M.n ? ` • حُدّثت ${M.n} وثيقة في آخر مزامنة` : ''}.`;
+    if (A.wtOn && A.wtOn()) return `<section class="mirbar${cls}" id="mirBar" role="status"><b>مزامنة رايات تعمل من هنا</b><span>نتيجة الجسر واعتماد الفروقات تُحفظ في الرابط مباشرة، وتعود إلى هذه النسخة خلال ثوانٍ. ${M.state === 'err' ? msg : ''}${last ? ` آخر مزامنة: ${hm(last)}.` : ''}</span><button class="btn s" data-mir="pull" ${M.busy ? 'disabled' : ''}>${M.busy ? 'جارٍ الجلب…' : 'مزامنة الآن'}</button></section>`;
     return `<section class="mirbar${cls}" id="mirBar" role="status"><b>نسخة Claude للاطلاع فقط</b><span>سجّل التحضير والتعديلات من الرابط <span dir="ltr">3bdr7man.github.io/haader</span>. ${msg}${last ? ` آخر مزامنة: ${hm(last)}.` : ''}</span>${M.mcp ? `<button class="btn s" data-mir="pull" ${M.busy ? 'disabled' : ''}>${M.busy ? 'جارٍ الجلب…' : 'مزامنة الآن'}</button>` : ''}</section>`;
   }
   function paint() {
@@ -113,16 +114,60 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
   }
   document.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('[data-mir="pull"]'); if (b) pull(true); });
 
-  /* لا كتابة من الواجهة في نسخة الاطلاع: يُعاد ما تغيّر في الذاكرة من قاعدة البيانات */
-  let lastToast = 0;
-  const baseEnqueue = enqueue;
-  enqueue = function (path) {
-    if (!A.readOnly) return baseEnqueue.apply(this, arguments);
-    const pt = arguments[1];
-    if (pt && typeof pt === 'object' && Object.keys(pt).every((k) => k === 'lastLogin')) return;   // تسجيل آخر دخول: يتولاه الرابط
-    if (Date.now() - lastToast > 4000) { lastToast = Date.now(); toast('نسخة Claude للاطلاع فقط: سجّل من الرابط، وتصل التعديلات هنا تلقائياً.'); }
+  /* ---------- مزامنة رايات من نسخة Claude ----------
+     الرابط محجوب على شبكة الكلية، ورايات لا يُفتح إلا من الحاسب، فصفحة «مزامنة رايات» هنا تعمل لصاحب المنصة وحده:
+     نتيجة الجسر واعتماد فروقاته تُكتب في قاعدة الرابط مباشرة عبر موصل Supabase، ثم تعود إلى هنا بالمرآة.
+     لا يُكتب غير: meta/rayat و marks/<الشعبة> و meta/lectures، وسطور السجل meta/audit إلحاقاً. */
+  const WT_PATH = /^(meta\/(rayat|lectures|audit)|marks\/[0-9A-Za-z_-]+)$/;
+  A.wtOn = () => !!(A.readOnly && M.mcp && M.owner && A.view === 'sync');
+  const WQ = [], SENT = new Set(); let wBusy = false, wTimer = null;
+  const lit = (o) => { const s = JSON.stringify(o); let t = 'hz'; while (s.includes('$' + t + '$')) t += Math.random().toString(36).slice(2, 6); return '$' + t + '$' + s + '$' + t + '$'; };
+  function wtPush(path, patch, op) {
+    const last = WQ[WQ.length - 1];
+    if (last && last.path === path && last.op === op && path !== 'meta/audit') { if (op === 'update') merge(last.patch, clone(patch)); else last.patch = clone(patch); }
+    else WQ.push({ path, patch: clone(patch), op });
+    saved('جارٍ الحفظ في الرابط…');
+    clearTimeout(wTimer); wTimer = setTimeout(wtFlush, 400);
+  }
+  async function newAudit(rows) {
+    let have = new Set();
+    try { const s = await db.doc('meta/audit').get(); if (s.exists) have = new Set(((s.data() || {}).rows || []).map((r) => JSON.stringify(r))); } catch (e) { /* */ }
+    return rows.filter((r) => { const k = JSON.stringify(r); return !have.has(k) && !SENT.has(k); });
+  }
+  async function wtFlush() {
+    if (wBusy || !WQ.length) return; wBusy = true;
+    const batch = WQ.splice(0, WQ.length), st = [], aud = [];
+    try {
+      for (const w of batch) {
+        const i = w.path.indexOf('/'), c = w.path.slice(0, i), id = w.path.slice(i + 1);
+        if (w.path === 'meta/audit') { (await newAudit((w.patch && w.patch.rows) || [])).forEach((r) => { aud.push(r); SENT.add(JSON.stringify(r)); }); continue; }
+        st.push(`insert into doc (col, id, data) values (${q(c)}, ${q(id)}, ${lit(w.patch)}::jsonb) on conflict (col, id) do update set data = ${w.op === 'set' ? 'excluded.data' : 'jsonb_deep_merge(doc.data, excluded.data)'}`);
+      }
+      if (aud.length) st.push(`with cur as (select coalesce((select data->'rows' from doc where col = 'meta' and id = 'audit'), '[]'::jsonb) || ${lit(aud)}::jsonb as r) insert into doc (col, id, data) select 'meta', 'audit', jsonb_build_object('rows', coalesce((select jsonb_agg(x.e order by x.i) from jsonb_array_elements(cur.r) with ordinality as x(e, i) where x.i > jsonb_array_length(cur.r) - 800), '[]'::jsonb)) from cur on conflict (col, id) do update set data = excluded.data`);
+      if (st.length) await sql(st.join(';\n') + ';\nselect 1 as ok;');
+      saved('حُفظ في الرابط');
+      setTimeout(() => pull(false), 300);
+    } catch (e) {
+      aud.forEach((r) => SENT.delete(JSON.stringify(r)));
+      saved('تعذر الحفظ');
+      toast('لم تُحفظ نتيجة المزامنة في الرابط' + (WHY[e && e.code] ? ': ' + WHY[e.code] : '. تحقق من ربط Supabase ثم أعد لصق النتيجة.'));
+      batch.forEach((w) => reload(w.path));
+    } finally { wBusy = false; if (WQ.length) wtFlush(); }
+  }
+  const reload = (path) => {
     const [c, ...rest] = String(path).split('/'), id = rest.join('/');
     if (db && A.raw[c] && id) db.doc(path).get().then((s) => { if (s.exists) A.raw[c][id] = s.data(); else delete A.raw[c][id]; try { rebuild(); render(true); } catch (e) { /* */ } }).catch(() => {});
+  };
+
+  /* لا كتابة من الواجهة في نسخة الاطلاع (عدا مزامنة رايات أعلاه): يُعاد ما تغيّر في الذاكرة من قاعدة البيانات */
+  let lastToast = 0;
+  const baseEnqueue = enqueue;
+  enqueue = function (path, patch, op) {
+    if (!A.readOnly) return baseEnqueue.apply(this, arguments);
+    if (patch && typeof patch === 'object' && Object.keys(patch).every((k) => k === 'lastLogin')) return;   // تسجيل آخر دخول: يتولاه الرابط
+    if (A.wtOn() && WT_PATH.test(String(path))) return wtPush(String(path), patch, op || 'update');
+    if (Date.now() - lastToast > 4000) { lastToast = Date.now(); toast('نسخة Claude للاطلاع فقط: سجّل من الرابط، وتصل التعديلات هنا تلقائياً.'); }
+    reload(path);
   };
 
   const baseRender = render;
@@ -139,6 +184,7 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
     try {
       const cl = window.claude, u = cl && cl.use ? await cl.use('user') : null;
       if (!u || !(await u.isOwner())) return;
+      M.owner = true; if (A.view === 'sync') try { render(true); } catch (e) { /* */ }
       const tryIn = () => {
         if (noAuto || A.me) return;
         const o = typeof ownerAcc === 'function' ? ownerAcc() : null;

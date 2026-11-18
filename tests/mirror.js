@@ -10,8 +10,22 @@ const MCP = `(() => {
   window.__MCP = { async callTool(server, tool, input) {
     window.__CALLS.push([server, tool, input.query.slice(0, 40)]);
     if (window.__MCPERR) return Promise.reject({ code: window.__MCPERR });
-    if (server !== 'Supabase' || tool !== 'execute_sql' || input.project_id !== 'urtdulwbpabslicxtsoa' || !/^\\s*select /i.test(input.query)) return Promise.reject({ code: 'bad_request' });
+    if (server !== 'Supabase' || tool !== 'execute_sql' || input.project_id !== 'urtdulwbpabslicxtsoa') return Promise.reject({ code: 'bad_request' });
     const W = window.__WEB || {};
+    if (/^\\s*(insert|with) /i.test(input.query)) {   /* كتابة مزامنة رايات: تُطبَّق على الرابط الوهمي */
+      if (window.__WERR) return Promise.reject({ code: window.__WERR });
+      (window.__SQLW = window.__SQLW || []).push(input.query);
+      const dm = (a, b) => { if (!a || typeof a !== 'object' || !b || typeof b !== 'object' || Array.isArray(b)) return b; const o = Object.assign({}, a); for (const k in b) o[k] = k in a ? dm(a[k], b[k]) : b[k]; return o; };
+      const stamp = '2026-11-18 0' + (++window.__WN || (window.__WN = 1)) + ':00:00+00';
+      for (const m of input.query.matchAll(/values \\('([^']+)', '([^']+)', \\$(\\w+)\\$([\\s\\S]*?)\\$\\3\\$::jsonb\\) on conflict \\(col, id\\) do update set data = (excluded\\.data|jsonb_deep_merge)/g)) {
+        const k = m[1] + '/' + m[2], v = JSON.parse(m[4]), cur = W[k] ? W[k].data : null;
+        W[k] = { u: stamp, data: m[5] === 'excluded.data' ? v : dm(cur || {}, v) };
+      }
+      const au = /'\\[\\]'::jsonb\\) \\|\\| \\$(\\w+)\\$([\\s\\S]*?)\\$\\1\\$::jsonb/.exec(input.query);
+      if (au) window.__AUD = (window.__AUD || []).concat(JSON.parse(au[2]));
+      return wrap([{ ok: 1 }]);
+    }
+    if (!/^\\s*select /i.test(input.query)) return Promise.reject({ code: 'bad_request' });
     if (/count\\(\\*\\)/.test(input.query)) { const ks = Object.keys(W); return wrap([{ n: window.__EMPTY ? 0 : ks.length, m: window.__EMPTY ? '' : ks.reduce((x, k) => (W[k].u > x ? W[k].u : x), '') }]); }
     if (/updated_at/.test(input.query)) return wrap(window.__EMPTY ? [] : Object.keys(W).map((k) => ({ col: k.split('/')[0], id: k.split('/').slice(1).join('/'), u: W[k].u })));
     const pairs = [...input.query.matchAll(/\\('([^']+)','([^']+)'\\)/g)].map((m) => m[1] + '/' + m[2]);
@@ -73,6 +87,39 @@ const MCP = `(() => {
   ok(await po.evaluate(() => A.me && A.me.id === 'uadmin' && document.getElementById('gate').hidden), 'صاحب المنصة يدخل نسخة الاطلاع بحسابه في Claude تلقائياً');
   await po.evaluate(() => logout()); await po.waitForTimeout(1500);
   ok(await po.evaluate(() => !A.me), 'وبعد الخروج لا يُعاد الدخول تلقائياً');
+  /* مزامنة رايات من نسخة Claude: صاحب المنصة وحده، وفي صفحة «مزامنة رايات» وحدها، تُكتب في الرابط */
+  const docs2 = JSON.parse(JSON.stringify(docs)); docs2['sections/' + crn].trainer = 'uadmin';   // شعب صاحب المنصة كما في الواقع
+  const web2 = JSON.parse(JSON.stringify(web)); web2['sections/' + crn].data.trainer = 'uadmin';
+  const init2 = `window.__WEB = ${JSON.stringify(web2)};` + MCP;
+  const po2 = await L.open(b, 'admin', docs2, { ro: true, mcp: init2 + 'window.__USERCAP = { isOwner: async () => true, id: async () => "cu_uadmin" };' });
+  await po2.waitForFunction(() => A.raw.meta && A.raw.meta.mirror && HAADER_MIRROR.M.owner, null, { timeout: 15000 });
+  ok(await po2.evaluate((c) => !mayEdit(c), crn), 'خارج «مزامنة رايات» تبقى النسخة للاطلاع');
+  await po2.evaluate(() => { A.view = 'sync'; render(true); }); await po2.waitForTimeout(300);
+  const sv = await po2.evaluate((c) => { const sec = A.m.secBy[c]; A.sync.sel = new Set([c + '_' + H.dk(sec.dates[0])]); render(true); return { me: mayEdit(c), n: buildPackage().items.length, bar: (document.getElementById('mirBar') || {}).innerText || '', copy: !document.querySelector('[data-act="sync-copy"]').disabled }; }, crn);
+  ok(sv.me && sv.n > 0 && sv.copy && /مزامنة رايات تعمل من هنا/.test(sv.bar), 'في «مزامنة رايات»: الحزمة تُبنى وزر النسخ يعمل، والشريط يوضح الحفظ في الرابط', sv);
+  const res = await po2.evaluate((x) => { const sec = A.m.secBy[x[0]], d = sec.dates[0], code = H.code(A.m, x[0], x[1], d); return { app: 'haader-result', v: 1, at: '2026-11-18T07:30:00.000Z', items: [{ crn: x[0], dk: H.dk(d), status: 'ok', s: { [x[1]]: code === 'غ' ? 'p' : 'a' }, x: {} }] }; }, [crn, tid]);
+  await po2.evaluate((t) => { const e = document.getElementById('resT'); e.value = t; e.dispatchEvent(new Event('change', { bubbles: true })); }, JSON.stringify(res));
+  await po2.waitForFunction(() => window.__WEB['meta/rayat'] && (window.__WEB['meta/rayat'].data.diffs || []).length, null, { timeout: 8000 }).catch(() => {});
+  let wr = await po2.evaluate(() => ({ w: window.__WEB['meta/rayat'] && window.__WEB['meta/rayat'].data, sql: (window.__SQLW || []).length, loc: window.__W.length, toast: document.getElementById('toast').textContent }));
+  ok(wr.w && wr.w.diffs.length === 1 && wr.w.lastAt === '2026-11-18T07:30:00.000Z' && wr.sql >= 1 && !/للاطلاع فقط/.test(wr.toast), 'لصق نتيجة الجسر يُحفظ في الرابط (حالة المحاضرات والفروقات)', wr);
+  await po2.waitForFunction(() => (((A.raw.meta.rayat || {}).diffs) || []).length === 1 && document.querySelector('[data-act="diff-take"]'), null, { timeout: 8000 }).catch(() => {});
+  ok(await po2.evaluate(() => !!document.querySelector('[data-act="diff-take"]')), 'وتعود الفروقات إلى نسخة Claude بالمرآة وتظهر للاعتماد');
+  await po2.click('[data-act="diff-take"]');
+  await po2.waitForFunction((x) => (window.__AUD || []).some((r) => r[1] === x[0] && r[2] === x[1] && r[7] === 'رايات'), [crn, tid], { timeout: 8000 }).catch(() => {});
+  wr = await po2.evaluate((x) => ({ code: (((window.__WEB['marks/' + x[0]] || {}).data || {}).m || {})[x[1]], diffs: (window.__WEB['meta/rayat'].data.diffs || []).length, aud: (window.__AUD || []).filter((r) => r[7] === 'رايات').length }), [crn, tid]);
+  ok(wr.diffs === 0 && wr.aud === 1 && Object.values(wr.code || {}).includes(res.items[0].s[tid] === 'a' ? 'غ' : 'ح'), '«اعتماد رايات» يكتب الرمز في كشف الرابط ويُلحق سطر السجل (بلا تكرار)', wr);
+  ok(await po2.evaluate(() => window.__CALLS.filter((c) => /^\s*(insert|with)/i.test(c[2])).length >= 2 && (window.__SQLW || []).every((q) => !/delete|drop|update doc set|accounts|tacc/i.test(q.replace(/do update set data/g, '')))), 'الكتابة محصورة في الكشوف ونتيجة رايات وسجلها، دون حذف ولا حسابات');
+  /* فشل الحفظ: لا رسالة نجاح، ويعود المعروض إلى المحفوظ */
+  await po2.evaluate(() => { window.__WERR = 'tool_error'; });
+  const before2 = await po2.evaluate(() => JSON.stringify(A.raw.meta.rayat));
+  await po2.evaluate((t) => takeResult(t), JSON.stringify(Object.assign({}, res, { at: '2026-11-18T08:00:00.000Z' })));
+  await po2.waitForTimeout(1500);
+  wr = await po2.evaluate(() => ({ t: document.getElementById('toast').textContent, s: document.getElementById('saved').textContent, at: (A.raw.meta.rayat || {}).lastAt }));
+  ok(/لم تُحفظ نتيجة المزامنة في الرابط/.test(wr.t) && /تعذر/.test(wr.s) && wr.at !== '2026-11-18T08:00:00.000Z', 'فشل الحفظ في الرابط: رسالة واضحة، ولا يبقى المعروض على غير المحفوظ', wr);
+  /* غير صاحب المنصة: لا كتابة حتى في «مزامنة رايات» */
+  const pn = await L.open(b, 'admin', docs2, { ro: true, mcp: init2 });
+  await pn.waitForTimeout(800);
+  ok(await pn.evaluate((c) => { A.view = 'sync'; render(true); return !mayEdit(c) && !A.wtOn(); }, crn), 'من لا يملك المنصة: «مزامنة رايات» للاطلاع فقط');
   /* بلا موصل */
   const p2 = await L.open(b, 'admin', L.seed(), { ro: true });
   await p2.waitForTimeout(800);

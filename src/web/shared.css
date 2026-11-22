@@ -179,3 +179,22 @@ input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}
 .rs-act{white-space:nowrap}.rs-act .btn{margin-inline-start:3px}
 .rs-bar{position:sticky;bottom:0;background:var(--surface);padding:10px 0;margin-top:10px;border-top:1px solid var(--line);z-index:2}
 @media (max-width:640px){.rs-actions{grid-template-columns:1fr}.rs-bar .btn{flex:1 1 100%}.rs-act{white-space:normal}}
+/* ---------- الإدارة المركزية ---------- */
+#ctlBanner{position:relative;z-index:50}
+.ctl-b{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;font-size:14px;text-align:center;border-bottom:1px solid var(--line)}
+.ctl-b.warn{background:var(--warnbg);color:var(--warn)}.ctl-b.bad{background:var(--badbg);color:var(--bad)}.ctl-b.info{background:var(--infobg,#e8f1fb);color:var(--info,#0b4f8a)}
+.ctl-sw{display:inline-flex;align-items:center;gap:6px;border:0;background:none;cursor:pointer;font:inherit;color:var(--muted,#5b6472);padding:2px}
+.ctl-sw i{width:38px;height:22px;border-radius:11px;background:#c0392b;position:relative;transition:background .15s;flex:none}
+.ctl-sw i::after{content:'';position:absolute;top:3px;inset-inline-start:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:inset-inline-start .15s}
+.ctl-sw.on i{background:#1e8e5a}.ctl-sw.on i::after{inset-inline-start:19px}
+.ctl-sw span{font-size:12.5px;min-width:34px}
+tr.dim td{opacity:.55}
+.ctl-dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#9aa3ad;vertical-align:middle;margin-inline-end:4px}.ctl-dot.ok{background:#1e8e5a}.ctl-dot.bad{background:#c0392b}
+.ctl-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.ctl-opt{display:flex;flex-direction:column;gap:4px;text-align:right;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;font:inherit;color:inherit}
+.ctl-opt span{font-size:12.5px;color:var(--muted,#5b6472)}.ctl-opt.on{border-color:#1e8e5a;box-shadow:inset 0 0 0 2px #1e8e5a}
+.ctl-users{max-height:260px;overflow:auto}
+.ctl-steps li{margin-bottom:8px;line-height:1.7}
+.tq-strip{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;margin-bottom:12px;border-radius:12px;background:linear-gradient(90deg,#0b6b4f,#0b4f8a);color:#fff}
+.tq-strip span{display:block;font-size:13px;opacity:.9}.tq-strip .btn{background:#fff;color:#0b4f8a;border-color:#fff}
+@media (max-width:640px){.ctl-t td,.ctl-t th{padding:6px 4px}}

@@ -243,6 +243,11 @@
       await signOut(true);
       throw new HErr('هذا الحساب غير مرتبط بالمنصة أو معطّل. راجع مسؤول المنصة.', 403);
     }
+    /* الإدارة المركزية: وضع التشغيل وقناة الإتاحة ورابط الشعبة من تقني (الخادم يفرضها، وهذا لعرض الرسالة) */
+    if (window.HAADER_WEB_AUTH_HOOK) {
+      try { await window.HAADER_WEB_AUTH_HOOK(who); }
+      catch (e) { if (e && e.ctl) { await signOut(true); throw new HErr(e.message, e.status || 403); } }
+    }
     S.me = who;
     if (who.kind === 'staff') {
       S.phase = 'staff';
@@ -280,7 +285,7 @@
   if (qrIn) { sstore.set('haader.qr', decodeURIComponent(qrIn[1])); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* */ } }
 
   window.HAADER_WEB = {
-    S, CFG, api, rpc, login, signOut, verifyPassword, pbkdf2, bump, store, sstore, HErr,
+    S, CFG, api, rpc, login, sb: { u: CFG.url, k: CFG.key }, signOut, verifyPassword, pbkdf2, bump, store, sstore, HErr,
     get phase() { return S.phase; },
     get me() { return S.me; },
     takeFlash() { const f = sstore.get('haader.flash'); sstore.set('haader.flash', null); return f || ''; },

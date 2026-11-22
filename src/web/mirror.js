@@ -220,7 +220,20 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
     grades_import_undo: "grades_import_undo(a->>'p_id')",
     roster_apply: "roster_apply(coalesce(a->'p', '{}'::jsonb))",
     roster_imports: "roster_imports(coalesce((a->>'p_limit')::int, 50))",
-    roster_contacts: "roster_contacts()"
+    roster_contacts: "roster_contacts()",
+    ctl_config: "ctl_config()",
+    ctl_overview: "ctl_overview()",
+    ctl_service_set: "ctl_service_set(a->>'p_id', a->>'p_field', (a->>'p_value')::boolean, a->>'p_reason')",
+    ctl_service_auth: "ctl_service_auth(a->>'p_id', a->>'p_mode', array(select jsonb_array_elements_text(coalesce(a->'p_roles', '[]'::jsonb))), array(select jsonb_array_elements_text(coalesce(a->'p_users', '[]'::jsonb))), a->>'p_reason')",
+    ctl_bulk: "ctl_bulk(a->>'p_system', a->>'p_field', (a->>'p_value')::boolean, a->>'p_reason')",
+    ctl_system_set: "ctl_system_set(a->>'p_id', a->'p_patch', a->>'p_reason')",
+    ctl_platform_set: "ctl_platform_set(a->>'p_field', a->>'p_value', a->>'p_reason')",
+    ctl_audit_log: "ctl_audit_log(coalesce((a->>'p_limit')::int, 200), (a->>'p_days')::int)",
+    sync_begin: "sync_begin(a->>'p_svc', a->>'p_key', a->>'p_detail')",
+    sync_end: "sync_end(a->>'p_id', a->>'p_status', (a->>'p_n')::int, a->>'p_detail')",
+    taqni_links: "taqni_links()",
+    taqni_link_set: "taqni_link_set(a->>'p_crn', coalesce(a->'p_patch', '{}'::jsonb), a->>'p_reason')",
+    claude_tool: "claude_tool(a->>'p_tool', coalesce(a->'p_args', '{}'::jsonb))"
   };
   async function rpc(fn, args) {
     if (!RPC[fn]) throw new Error('عملية غير معروفة.');

@@ -77,7 +77,7 @@ import openpyxl,sys
 wb=openpyxl.load_workbook(sys.argv[1]); s=wb['بيانات الشعب']; t=wb['بيانات المتدربين']
 r=s.max_row+1
 while r>2 and s.cell(r-1,1).value is None: r-=1
-for i,v in enumerate(['88201','برمجة الحاسب','حاسب 111','الفصل التدريبي الأول','1448','مدرب أول','عملي','الأحد','09:00','الأربعاء','10:00',100]): s.cell(r,i+1,v)
+for i,v in enumerate(['88201','برمجة الحاسب','حاسب 111','الفصل التدريبي الأول','1448','مدرب أول','عملي','الاثنين','09:00','الأربعاء','10:00',100]): s.cell(r,i+1,v)
 rows=[['63854','446910001','بدر سامي فهد الحربي','446910001@tvtc.edu.sa','0551112233'],
 ['63854','446910002','راكان حمد سعود المطيري','',''],
 ['88201','446910003','يزن مشعل راشد العتيبي','446910003@tvtc.edu.sa','551114455'],
@@ -93,7 +93,7 @@ wb.save(sys.argv[2])`, tpl, filled);
   await p.setInputFiles('input[data-change="rs-xlsx"]', filled);
   await p.waitForFunction(() => HAADER_RS.R.mode === 'review', null, { timeout: 20000 });
   let c = await st(p), R = await p.evaluate(() => ({ secs: HAADER_RS.R.secs.map((s) => [s.crn, s.st, s.err.length, s.course, s.kind, s.d1, s.t1]), rows: HAADER_RS.R.rows.map((r) => [r.crn, r.id, r.st, r.err.concat(r.warn).join(' ')]) }));
-  check('قُرئت الشعب: 63854 موجودة و88201 جديدة بموعدها', R.secs.some((s) => s[0] === '63854' && s[1] === 'existing') && R.secs.some((s) => s[0] === '88201' && s[1] === 'new' && !s[2] && s[4] === 'عملي' && s[5] === 'الأحد' && s[6] === '09:00'), R.secs);
+  check('قُرئت الشعب: 63854 موجودة و88201 جديدة بموعدها', R.secs.some((s) => s[0] === '63854' && s[1] === 'existing') && R.secs.some((s) => s[0] === '88201' && s[1] === 'new' && !s[2] && s[4] === 'عملي' && s[5] === 'الاثنين' && s[6] === '09:00'), R.secs);
   check('حالات البيانات: 4 صحيح، 2 مكرر، 3 يحتاج تصحيحاً', c.ok === 4 && c.dup === 2 && c.fix === 3, c);
   check('سبب «مكرر في البيانات نفسها» ويُعرض للمراجعة', R.rows.filter((r) => r[2] === 'dup').every((r) => /مكرر في البيانات نفسها/.test(r[3])));
   check('أسباب التصحيح: رقم ناقص، اسم ناقص، بريد وجوال غير صحيحين', R.rows.some((r) => r[1] === '44691' && /9 أرقام/.test(r[3])) && R.rows.some((r) => r[1] === '446910005' && /ناقص/.test(r[3])) && R.rows.some((r) => r[1] === '446910006' && /البريد/.test(r[3]) && /الجوال/.test(r[3])));

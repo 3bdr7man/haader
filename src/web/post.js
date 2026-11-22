@@ -63,13 +63,19 @@ if (window.HAADER_WEB) (() => {
   SUBMIT.ownerReset = async function () { toast('إعادة تعيين كلمة مرور المسؤول تتم من حساب مسؤول آخر.'); };
   /* تغيير كلمة المرور: يُتحقق من الحالية على الخادم، والبصمة الجديدة تصبح كلمة الدخول فوراً */
   SUBMIT.changePw = async function () {
-    const p = $('#cpN').value, u = A.me;
-    if (!A.forceChange && !(await W.verifyPassword(u.username, $('#cpC').value))) { toast('كلمة المرور الحالية غير صحيحة.'); return; }
-    if (p.length < 8 || p !== $('#cpR').value) { toast('تحقق من كلمة المرور وتطابقها، 8 أحرف على الأقل.'); return; }
+    const p = $('#cpN').value, u = A.me, btn = $('#modal form[data-submit="changePw"] .btn.p');
+    if (!A.forceChange && !(await W.verifyPassword(u.username, $('#cpC').value))) { pwErr('كلمة المرور الحالية غير صحيحة.'); return; }
+    const bad = pwRuleErr(p, $('#cpR').value, u); if (bad) { pwErr(bad); return; }
+    if (!A.forceChange && p === $('#cpC').value) { pwErr('اختر كلمة مرور تختلف عن الحالية.'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'جارٍ الحفظ…'; }
     const f = await pwFields(p);
+    /* الخادم يحوّل البصمة إلى كلمة الدخول، ويسجل التغيير في سجله باسمك ووقته (14_pw_change_audit) */
     try { await db.doc('accounts/' + u.id).update(Object.assign({ mustChange: false }, f)); }
-    catch (x) { toast(x.message || 'لم تُحفظ كلمة المرور.'); return; }
-    Object.assign(u, { mustChange: false, salt: f.salt, iter: f.iter }); A.forceChange = false; closeModal(); toast('تغيّرت كلمة المرور. استخدمها في الدخول القادم.');
+    catch (x) { if (btn) { btn.disabled = false; btn.textContent = 'حفظ'; } pwErr(x.message || 'لم تُحفظ كلمة المرور.'); return; }
+    const forced = A.forceChange;
+    Object.assign(u, { mustChange: false, salt: f.salt, iter: f.iter, pwAt: new Date().toISOString() }); A.forceChange = false;
+    logLogin(u.username, true, forced ? 'تغيير كلمة المرور المؤقتة' : 'تغيير كلمة المرور');
+    closeModal(); toast('تغيّرت كلمة المرور، وسُجّل التغيير في سجل المنصة. استخدمها في الدخول القادم.');
   };
   const baseLogout = logout;
   logout = function () { W.sstore.set('haader.asTrainer', null); try { if (A.me) logLogin(A.me.username, true, 'خروج'); } catch (e) { /* */ } A.me = null; W.signOut(); };

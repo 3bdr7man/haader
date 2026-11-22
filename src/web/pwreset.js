@@ -161,5 +161,21 @@ if (document.getElementById('shell') && window.HAADER_WEB) (() => {
   /* عند دخول المسؤول: تحميل الطلبات للتنبيه والعدّاد */
   const baseRender = render;
   render = function () { const r = baseRender.apply(this, arguments); if (A.me && isAdmin() && !R.list && !R.busy && !R.err) setTimeout(() => load(true), 300); return r; };
-  window.HAADER_PW = { gate, F, R, load };
+  /* سجل تغيير كلمات المرور (من سجل الخادم) في صفحة «سجل الدخول» للمسؤول */
+  const PL = { rows: null, busy: false, err: '' };
+  async function loadPl() { if (PL.busy) return; PL.busy = true; try { PL.rows = await W.rpc('pw_change_log', { p_limit: 200 }); PL.err = ''; } catch (e) { PL.err = 'تعذر تحميل سجل كلمات المرور.'; } PL.busy = false; if (A.view === 'logins') render(true); }
+  const PACT = { 'pw-change': 'غيّر كلمة مروره', 'pw-set': 'عيّن كلمة مرور لحساب', 'pw-reset-done': 'استعادة كلمة المرور', 'pw-reset-link': 'رابط استعادة' };
+  const baseLogins = VIEWS.logins;
+  VIEWS.logins = function () {
+    const h = baseLogins.apply(this, arguments);
+    if (!isAdmin()) return h;
+    if (!PL.rows && !PL.busy && !PL.err) setTimeout(loadPl, 0);
+    const fmt = (x) => { try { return new Date(x).toLocaleString('ar-SA-u-nu-latn', { timeZone: 'Asia/Riyadh', dateStyle: 'medium', timeStyle: 'short' }); } catch (e) { return x; } };
+    return h + `<section class="panel" id="pwLog"><div class="row between"><h2 style="margin:0">سجل تغيير كلمات المرور</h2><button class="btn s" data-act="pwlog-refresh">تحديث</button></div>
+      <div class="sub">من سجل الخادم: كل تغيير لكلمة مرور حساب في المنصة بهوية من أجراه ووقته. لا تُسجَّل كلمة المرور نفسها.</div>
+      ${PL.err ? `<div class="gnote bad">${esc(PL.err)}</div>` : !PL.rows ? '<div class="sub">جارٍ التحميل…</div>' : !PL.rows.length ? '<div class="sub">لا تغييرات مسجلة بعد.</div>'
+        : `<div class="tw"><table><thead><tr><th>الوقت</th><th>المنفّذ</th><th>العملية</th><th>التفاصيل</th></tr></thead><tbody>${PL.rows.map((x) => `<tr><td style="white-space:nowrap">${esc(fmt(x.at))}</td><td>${esc(x.by || '—')}</td><td>${esc(PACT[x.act] || x.act)}</td><td>${esc(x.det || '')}</td></tr>`).join('')}</tbody></table></div>`}</section>`;
+  };
+  ACT['pwlog-refresh'] = () => { PL.rows = null; loadPl(); };
+  window.HAADER_PW = { gate, F, R, load, PL };
 })();

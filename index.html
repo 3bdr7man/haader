@@ -224,7 +224,7 @@ legend{font-size:13px;font-weight:700;padding-inline:5px;color:var(--ink2)}
 .skin{background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:8px;cursor:pointer;text-align:right}
 .skin.on{border-color:var(--pri)}.skin:hover{border-color:var(--teal)}
 .sw{height:84px;border-radius:9px;display:grid;place-items:center;color:#fff;font-size:38px;font-weight:800}
-@media (max-width:860px){#who{border:0;padding:0;flex:none}#who b,#who small{display:none}#who .row{flex-wrap:nowrap;gap:3px}#who .wbtn{margin:0;white-space:nowrap}#who [data-act=change-pw]{display:none}}
+@media (max-width:860px){#who{border:0;padding:0;flex:none}#who b,#who small{display:none}#who .row{flex-wrap:nowrap;gap:3px}#who .wbtn{margin:0;white-space:nowrap}}
 
 @media (max-width:860px){
   #shell{grid-template-columns:minmax(0,1fr)}
@@ -1692,9 +1692,12 @@ const SUBMIT = {
   },
   async changePw() {
     const p = $('#cpN').value, u = A.me;
-    if (!A.forceChange && (await hashPw($('#cpC').value, u.salt, u.iter)) !== u.hash) { toast('كلمة المرور الحالية غير صحيحة.'); return; }
-    if (p.length < 8 || p !== $('#cpR').value) { toast('تحقق من كلمة المرور وتطابقها، 8 أحرف على الأقل.'); return; }
-    const f = await pwFields(p); Object.assign(u, f, { mustChange: false }); enqueue('accounts/' + u.id, Object.assign({ mustChange: false }, f)); A.forceChange = false; closeModal(); toast('تغيّرت كلمة المرور.');
+    if (!A.forceChange && (await hashPw($('#cpC').value, u.salt, u.iter)) !== u.hash) { pwErr('كلمة المرور الحالية غير صحيحة.'); return; }
+    const bad = pwRuleErr(p, $('#cpR').value, u); if (bad) { pwErr(bad); return; }
+    if (u.hash && (await hashPw(p, u.salt, u.iter)) === u.hash) { pwErr('اختر كلمة مرور تختلف عن الحالية.'); return; }
+    const f = await pwFields(p), at = new Date().toISOString(); Object.assign(u, f, { mustChange: false, pwAt: at }); enqueue('accounts/' + u.id, Object.assign({ mustChange: false, pwAt: at }, f));
+    logLogin(u.username, true, A.forceChange ? 'تغيير كلمة المرور المؤقتة' : 'تغيير كلمة المرور');
+    A.forceChange = false; closeModal(); toast('تغيّرت كلمة المرور، وسُجّل التغيير في سجل المنصة.');
   },
   async saveUser() {
     const id = A.editUser, name = $('#uN').value.trim(), un = $('#uU').value.trim().toLowerCase(), pw = $('#uP').value, role = $('#uR').value;
@@ -1743,9 +1746,19 @@ const SUBMIT = {
   },
 };
 document.addEventListener('submit', (ev) => { const k = ev.target.dataset.submit; if (k) { ev.preventDefault(); if (isViewer()) return; Promise.resolve(SUBMIT[k]()).catch(() => toast('تعذر تنفيذ العملية. أعد المحاولة.')); } });
+/* قواعد كلمة المرور الجديدة لحسابات المنصة (المدرب ورئيس القسم والمسؤول) */
+function pwRuleErr(p, r, u) {
+  if (!p || p.length < 8) return 'كلمة المرور الجديدة 8 أحرف على الأقل.';
+  if (/^\d+$/.test(p)) return 'لا تكن كلمة المرور أرقاماً فقط: أضف حروفاً.';
+  if (u && u.username && p.toLowerCase().includes(String(u.username).toLowerCase())) return 'لا تتضمن كلمة المرور اسم المستخدم.';
+  if (p !== r) return 'كلمة المرور الجديدة وتأكيدها غير متطابقين.';
+  return '';
+}
+const pwErr = (t) => { const e = $('#cpE'); if (e) { e.hidden = !t; e.textContent = t || ''; } if (t) toast(t); };
 function openChangePw(force) {
   A.forceChange = !!force;
-  modal(`<h2>${force ? 'غيّر كلمة المرور المؤقتة' : 'تغيير كلمة المرور'}</h2><form data-submit="changePw" class="stack">${force ? '' : '<label>كلمة المرور الحالية<input type="password" id="cpC" dir="ltr" autocomplete="current-password" required></label>'}<label>كلمة المرور الجديدة<input type="password" id="cpN" dir="ltr" minlength="8" autocomplete="new-password" required></label><label>تأكيد كلمة المرور<input type="password" id="cpR" dir="ltr" minlength="8" autocomplete="new-password" required></label><div class="row"><button class="btn p">حفظ</button>${force ? '' : '<button type="button" class="btn" data-act="modal-close">إلغاء</button>'}</div></form>`);
+  const last = A.me && A.me.pwAt ? `<div class="sub">آخر تغيير: ${esc(new Date(A.me.pwAt).toLocaleString('ar-SA-u-nu-latn', { timeZone: 'Asia/Riyadh', dateStyle: 'medium', timeStyle: 'short' }))}</div>` : '';
+  modal(`<h2>${force ? 'غيّر كلمة المرور المؤقتة' : 'تغيير كلمة المرور'}</h2>${last}<form data-submit="changePw" class="stack">${force ? '' : '<label>كلمة المرور الحالية<input type="password" id="cpC" dir="ltr" autocomplete="current-password" required></label>'}<label>كلمة المرور الجديدة<input type="password" id="cpN" dir="ltr" minlength="8" autocomplete="new-password" required></label><label>تأكيد كلمة المرور<input type="password" id="cpR" dir="ltr" minlength="8" autocomplete="new-password" required></label><ul class="sub cprules"><li>8 أحرف على الأقل، وليست أرقاماً فقط.</li><li>لا تتضمن اسم المستخدم، وتختلف عن كلمة المرور الحالية.</li><li>يُسجَّل التغيير في سجل المنصة باسمك ووقته، دون كلمة المرور نفسها.</li></ul><div id="cpE" class="emerr" role="alert" hidden></div><div class="row"><button class="btn p">حفظ</button>${force ? '' : '<button type="button" class="btn" data-act="modal-close">إلغاء</button>'}</div></form>`);
 }
 
 /* ---------- Dashboard ---------- */

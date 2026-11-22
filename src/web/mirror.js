@@ -166,6 +166,7 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
     if (!A.readOnly) return baseEnqueue.apply(this, arguments);
     if (patch && typeof patch === 'object' && Object.keys(patch).every((k) => k === 'lastLogin')) return;   // تسجيل آخر دخول: يتولاه الرابط
     if (A.wtOn() && WT_PATH.test(String(path))) return wtPush(String(path), patch, op || 'update');
+    if (A.rpcOn() && /^glogs?\//.test(String(path))) return;   // سجل الدرجات المحلي: الخادم يسجل الاستيراد في سجله
     if (Date.now() - lastToast > 4000) { lastToast = Date.now(); toast('نسخة Claude للاطلاع فقط: سجّل من الرابط، وتصل التعديلات هنا تلقائياً.'); }
     reload(path);
   };
@@ -208,5 +209,26 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
     document.addEventListener('visibilitychange', () => { if (!document.hidden) probe(); });
     window.addEventListener('focus', () => probe());
   })();
-  window.HAADER_MIRROR = { pull, M, rowsOf };
+  /* ---------- استيراد الدرجات من نسخة Claude ----------
+     يُنفَّذ على الخادم بدالة الاستيراد نفسها التي يستدعيها الرابط (grades_import وسجلها والتراجع)، بحساب صاحب المنصة،
+     فتمر كل درجة بتحقق الخادم وتُسجَّل في سجل الاستيراد، ثم تعود إلى هنا بالمرآة. لصاحب المنصة وحده وبحسابه هو. */
+  A.rpcOn = () => { try { const o = ownerAcc(); return !!(A.readOnly && M.mcp && M.owner && A.me && o && A.me.id === o.id); } catch (e) { return false; } };
+  const RPC = {
+    grades_import: "grades_import(a->>'p_crn', coalesce(a->'p_rows', '[]'::jsonb), coalesce(a->'p_items', '{}'::jsonb), coalesce((a->>'p_overwrite')::boolean, false), coalesce(a->>'p_file', ''), coalesce(a->'p_wb', '{}'::jsonb))",
+    grades_imports: "grades_imports(a->>'p_crn')",
+    grades_import_undo: "grades_import_undo(a->>'p_id')"
+  };
+  async function rpc(fn, args) {
+    if (!RPC[fn]) throw new Error('عملية غير معروفة.');
+    if (!A.rpcOn()) throw new Error('الحفظ من نسخة Claude متاح لصاحب المنصة بحسابه، مع ربط Supabase.');
+    const query = `with c as (select set_config('request.jwt.claims', json_build_object('sub', (select id from app_user where legacy_id = ${q(ownerAcc().id)}), 'role', 'authenticated')::text, true) as x), p as (select ${lit(args || {})}::jsonb as a) select ${RPC[fn]} as r from c, p`;
+    let r;
+    try { r = await M.mcp.callTool(SRV, 'execute_sql', { project_id: PROJECT, query }, { cache: false }); }
+    catch (e) { throw new Error(WHY[e && e.code] || (e && e.message) || 'تعذر الاتصال بقاعدة البيانات.'); }
+    let t = r && r.payload; if (t === undefined && r && r.content && r.content[0]) t = r.content[0].text;
+    const txt = typeof t === 'string' ? t : JSON.stringify(t || '');
+    if (!/<untrusted-data-/.test(txt) && /"error"/.test(txt)) { const m = /ERROR:\s*(?:[0-9A-Z]{5}:\s*)?([^"\\]+)/.exec(txt); throw new Error(m ? m[1].trim() : 'رفض الخادم العملية.'); }
+    const rows = rowsOf(t); return rows[0] ? rows[0].r : null;
+  }
+  window.HAADER_MIRROR = { pull, M, rowsOf, rpc };
 })();

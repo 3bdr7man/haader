@@ -12,6 +12,7 @@ const MCP = `(() => {
     if (window.__MCPERR) return Promise.reject({ code: window.__MCPERR });
     if (server !== 'Supabase' || tool !== 'execute_sql' || input.project_id !== 'urtdulwbpabslicxtsoa') return Promise.reject({ code: 'bad_request' });
     const W = window.__WEB || {};
+    if (/grades_import/.test(input.query) && /request\\.jwt\\.claims/.test(input.query)) { (window.__RPCQ = window.__RPCQ || []).push(input.query); if (window.__RPCERR) return { content: [{ type: 'text', text: JSON.stringify({ error: { name: 'HttpException', message: 'Failed to run sql query: ERROR:  P0001: الشعبة 63854 غير مسندة إليك، فلا تُستورد درجاتها.' } }) }] }; return wrap([{ r: { id: 'GI-TEST', add: 1, chg: 0, same: 0, kept: 0, bad: [], changes: [], s: {} } }]); }
     if (/^\\s*(insert|with) /i.test(input.query)) {   /* كتابة مزامنة رايات: تُطبَّق على الرابط الوهمي */
       if (window.__WERR) return Promise.reject({ code: window.__WERR });
       (window.__SQLW = window.__SQLW || []).push(input.query);
@@ -116,10 +117,16 @@ const MCP = `(() => {
   await po2.waitForTimeout(1500);
   wr = await po2.evaluate(() => ({ t: document.getElementById('toast').textContent, s: document.getElementById('saved').textContent, at: (A.raw.meta.rayat || {}).lastAt }));
   ok(/لم تُحفظ نتيجة المزامنة في الرابط/.test(wr.t) && /تعذر/.test(wr.s) && wr.at !== '2026-11-18T08:00:00.000Z', 'فشل الحفظ في الرابط: رسالة واضحة، ولا يبقى المعروض على غير المحفوظ', wr);
+  /* استيراد الدرجات من نسخة Claude: بدالة الخادم نفسها وبحساب صاحب المنصة */
+  await po2.evaluate(() => { window.__WERR = null; A.view = 'home'; render(true); });
+  const rp = await po2.evaluate(async () => { const r = await HAADER_MIRROR.rpc('grades_import', { p_crn: '63854', p_rows: [{ id: 'x', k: 'LEC2', v: 18 }], p_items: {}, p_overwrite: false, p_file: 'f.xlsx', p_wb: {} }); return { on: A.rpcOn(), r, q: (window.__RPCQ || []).slice(-1)[0] || '' }; });
+  ok(rp.on && rp.r && rp.r.id === 'GI-TEST' && /legacy_id = 'uadmin'/.test(rp.q) && /grades_import\(a->>'p_crn'/.test(rp.q) && /"LEC2"/.test(rp.q), 'استيراد الدرجات من نسخة Claude: دالة الخادم بحساب صاحب المنصة', [rp.on, rp.r, rp.q.slice(0, 200)]);
+  const rerr = await po2.evaluate(async () => { window.__RPCERR = true; try { await HAADER_MIRROR.rpc('grades_import', { p_crn: '63854', p_rows: [] }); return 'no-error'; } catch (e) { return e.message; } finally { window.__RPCERR = false; } });
+  ok(/غير مسندة إليك/.test(rerr), 'ورفض الخادم يظهر برسالته، دون نجاح وهمي', rerr);
   /* غير صاحب المنصة: لا كتابة حتى في «مزامنة رايات» */
   const pn = await L.open(b, 'admin', docs2, { ro: true, mcp: init2 });
   await pn.waitForTimeout(800);
-  ok(await pn.evaluate((c) => { A.view = 'sync'; render(true); return !mayEdit(c) && !A.wtOn(); }, crn), 'من لا يملك المنصة: «مزامنة رايات» للاطلاع فقط');
+  ok(await pn.evaluate((c) => { A.view = 'sync'; render(true); return !mayEdit(c) && !A.wtOn() && !A.rpcOn(); }, crn), 'من لا يملك المنصة: «مزامنة رايات» واستيراد الدرجات للاطلاع فقط');
   /* بلا موصل */
   const p2 = await L.open(b, 'admin', L.seed(), { ro: true });
   await p2.waitForTimeout(800);

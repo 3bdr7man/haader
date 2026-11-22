@@ -131,3 +131,11 @@ input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}
 #gate .pwas-o{background:rgba(255,255,255,.08);color:inherit;border-color:rgba(255,255,255,.35)}
 #gate .pwas-o.on{background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.9)}
 #gate .pwas-o input{accent-color:#fff}
+
+/* تلوين الدرجات: المنخفضة بالأحمر والمرتفعة بالأزرق */
+.gtkey{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--ink2,#4A5D75);margin-inline-end:8px;vertical-align:middle}
+.gtkey i{display:inline-block;width:18px;height:10px;border-radius:3px}
+.gtkey i.lo{background:rgba(220,38,38,.55)}.gtkey i.mid{background:rgba(120,120,140,.12);margin-inline-start:4px}.gtkey i.hi{background:rgba(37,99,235,.55);margin-inline-end:2px}
+.gtab td.gitc{font-size:12.5px;min-width:46px}
+.gtab th.gith{font-weight:500;font-size:11.5px;color:var(--ink2,#4A5D75)}
+.gtab .gin[style]{border-color:transparent}

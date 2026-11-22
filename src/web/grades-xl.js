@@ -112,16 +112,19 @@ if (document.getElementById('shell')) (() => {
         if (c.helper) set(j, r.el ? { formula: bad.length ? bad.join('+') : '0' } : 0, {});
       });
     });
-    /* تنسيق شرطي */
+    /* تنسيق شرطي. الدرجات بتدرج لوني بحسب الحد الأعلى: المنخفضة بالأحمر والمرتفعة بالأزرق */
+    const scale = (priority, mx) => ({ type: 'colorScale', priority, cfvo: [{ type: 'num', value: 0 }, { type: 'num', value: mx / 2 }, { type: 'num', value: mx }], color: [{ argb: 'FFF8696B' }, { argb: 'FFFCFCFF' }, { argb: 'FF5A8AC6' }] });
     if (rows.length) {
       inputs.forEach((j) => {
         const L = colL(j), ref = `${L}${R0}:${L}${R1}`, c0 = `${L}${R0}`, mx = cols[j - 1].max;
         ws.addConditionalFormatting({ ref, rules: [
           { type: 'expression', priority: 1, formulae: [`AND(${c0}<>"",IF(ISNUMBER(${c0}),OR(${c0}<0,${c0}>${mx},ROUND(${c0},2)<>${c0}),TRUE))`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFFC7CE' } }, font: { color: { argb: 'FF9C0006' }, bold: true } } },
           { type: 'expression', priority: 2, formulae: [`AND($E${R0}="نعم",${c0}="")`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFCE4D6' } } } },
-          { type: 'expression', priority: 3, formulae: [`AND($E${R0}="نعم",ISNUMBER(${c0}))`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFE2F0D9' } } } },
+          scale(3, mx),
         ] });
       });
+      /* المجاميع المحسوبة (المكوّن من بنوده، ومجموع الجزء، والمجموع) بالتدرج اللوني نفسه */
+      cols.forEach((c, i) => { const mx = c.total ? G.total(sec) : c.part ? parts[c.part].reduce((a, k) => a + k.max, 0) : (c.comp && c.items && c.items.length ? c.max : null); if (mx) ws.addConditionalFormatting({ ref: `${colL(i + 1)}${R0}:${colL(i + 1)}${R1}`, rules: [scale(8, mx)] }); });
       const sref = `${colL(stC)}${R0}:${colL(stC)}${R1}`, s0 = `${colL(stC)}${R0}`;
       ws.addConditionalFormatting({ ref: sref, rules: [
         { type: 'expression', priority: 4, formulae: [`${s0}="مكتمل"`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFC6EFCE' } }, font: { color: { argb: 'FF006100' } } } },

@@ -49,7 +49,7 @@ const gs = (crn) => JSON.parse(sql(`select data from doc where col='gsec' and id
   const upload = async (p, crn, file, all, over) => {
     await p.click(`[data-act="gx-imp"][data-crn="${crn}"]`);
     await p.waitForSelector('#modal input[data-change="gx-file"]', { state: 'attached' });
-    if (all) await p.check('#modal input[name="gxs"][value="all"]');
+    await p.check(`#modal input[name="gxs"][value="${all ? 'all' : 'one'}"]`);
     if (over) await p.check('#gxo');
     await p.setInputFiles('#modal input[data-change="gx-file"]', file);
     await p.waitForFunction(() => /معاينة استيراد الدرجات|لا شيء للاستيراد/.test(document.querySelector('#modal').textContent), null, { timeout: 20000 });
@@ -228,7 +228,44 @@ wb.save(sys.argv[2])`, T2, F3, el54[0]);
   await p.waitForFunction(() => /تم التراجع/.test(document.querySelector('#modal').textContent), null, { timeout: 15000 });
   check('التراجع يعيد القيمة السابقة (18)', gm('63854').g[el54[0]].LEC2 === 18, gm('63854').g[el54[0]]);
   check('…ويُسجَّل على الخادم', sql(`select status from grade_import order by at desc limit 1`) === 'undone' && Number(sql(`select count(*) from audit where act='grade_import_undo'`)) === 1);
+
   await close(p);
+  // 8ب) رصد الدرجات دفعة واحدة من لوحة قيادة الاختبارات، والبند التفصيلي المخالف للمحفوظ لا يُستبدل دون موافقة
+  const old54 = gm('63854').s[el54[0]].LEC1['الواجبات'], new54 = old54 === 2 ? 3 : 2, F4b = OUT + '/filled4.xlsx';
+  py(`
+import openpyxl, sys
+wb = openpyxl.load_workbook(sys.argv[1]); s = wb['63854']; hdr = [c.value for c in s[5]]
+r = [r for r in range(6, s.max_row + 1) if str(s.cell(r, 2).value) == sys.argv[3]][0]
+s.cell(r, hdr.index('الواجبات (6)') + 1).value = float(sys.argv[4])
+wb.save(sys.argv[2])`, T2, F4b, el54[0], String(new54));
+  await p.evaluate(() => go('gdash'));
+  await p.waitForSelector('.gxall input[data-change="gx-file-all"]', { state: 'attached', timeout: 15000 });
+  check('لوحة قيادة الاختبارات: «رصد الدرجات دفعة واحدة» بزر الاستيراد لجميع المقررات والشعب', /رصد الدرجات دفعة واحدة/.test(await p.textContent('.gxall')) && /استيراد المصنف لجميع المقررات والشعب/.test(await p.textContent('.gxall')));
+  await p.setInputFiles('.gxall input[data-change="gx-file-all"]', F4b);
+  await p.waitForFunction(() => /معاينة استيراد الدرجات|لا شيء للاستيراد/.test(document.querySelector('#modal').textContent), null, { timeout: 20000 });
+  t = await p.textContent('#modal');
+  check('معاينة واحدة لكل المقررات والشعب: المقرر والشعبة وعدد المتدربين', /الشعب\s*2/.test(t) && /التوجيه والتحويل/.test(t) && /تطبيقات الحاسب/.test(t) && /63854/.test(t) && /63905/.test(t), t.slice(0, 500));
+  check('البند التفصيلي المخالف للمحفوظ ظاهر بالقديمة والجديدة', /تخالف المحفوظ\s*1/.test(t) && /LEC1 › الواجبات/.test(t), t.slice(0, 600));
+  t = await approve(p);
+  check('دون «تحديث الدرجات السابقة» يبقى البند المحفوظ', gm('63854').s[el54[0]].LEC1['الواجبات'] === old54, [old54, gm('63854').s[el54[0]].LEC1]);
+  await close(p);
+  await p.evaluate(() => go('gdash'));
+  await p.waitForSelector('.gxall input[data-change="gx-file-all"]', { state: 'attached', timeout: 15000 });
+  await p.setInputFiles('.gxall input[data-change="gx-file-all"]', F4b);
+  await p.waitForSelector('#giOver', { timeout: 20000 }); await p.check('#giOver');
+  t = await approve(p);
+  check('ومع الموافقة يُستبدل', gm('63854').s[el54[0]].LEC1['الواجبات'] === new54, gm('63854').s[el54[0]].LEC1);
+  await close(p);
+  // 8ج) تلوين الدرجات
+  await entry(p, '63854');
+  const tone = await p.evaluate(() => ({ lo: gTone(1, 10), hi: gTone(9, 10), mid: gTone(5, 10), none: gTone(null, 10), cells: [...document.querySelectorAll('#gBody td.gitc[style], #gBody .gin[style], #gBody td.gtot[style], #gBody td.gsumc[style]')].length, items: document.querySelectorAll('#gBody td.gitc').length, key: !!document.querySelector('.gtkey') }));
+  check('تلوين الدرجات: المنخفضة بالأحمر والمرتفعة بالأزرق، ومفتاح الألوان', /220,38,38/.test(tone.lo) && /37,99,235/.test(tone.hi) && tone.none === '' && tone.key, tone);
+  check('جدول الإدخال يعرض البنود التفصيلية ملوّنة', tone.items > 0 && tone.cells > 0, tone);
+  const cf = JSON.parse(py(`
+import openpyxl, sys, json
+wb = openpyxl.load_workbook(sys.argv[1]); s = wb['63854']
+print(json.dumps(sum(1 for r in s.conditional_formatting for x in r.rules if x.type == 'colorScale')))`, T2));
+  check('نموذج Excel: تدرج لوني للدرجات والمجاميع', cf >= 10, cf);
 
   // 9) مصنف فصل تدريبي سابق: مرفوض
   const F4 = OUT + '/oldterm.xlsx';

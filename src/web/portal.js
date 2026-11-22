@@ -107,7 +107,7 @@ if (document.getElementById('shell')) (() => {
     });
     const itemNames = []; cols.forEach((c) => ((c.work && (gr.items || {})[c.work.k]) || []).forEach((it) => { if (!itemNames.includes(it.n)) itemNames.push(it.n); }));
     const g = gr.g || {}, s = gr.s || {};
-    const cell = (v, max, cls) => `<td class="n${cls ? ' ' + cls : ''}">${gnum(v) ? `<b>${gfmt(v)}</b>` : '<span class="tp-gx">—</span>'}${gnum(max) ? `<small> / ${gfmt(max)}</small>` : ''}</td>`;
+    const cell = (v, max, cls) => `<td class="n${cls ? ' ' + cls : ''}"${gnum(v) && gnum(max) && typeof gToneAt === 'function' ? gToneAt(v, max) : ''}>${gnum(v) ? `<b>${gfmt(v)}</b>` : '<span class="tp-gx">—</span>'}${gnum(max) ? `<small> / ${gfmt(max)}</small>` : ''}</td>`;
     const rows = [];
     itemNames.forEach((n) => rows.push(`<tr><th>${esc(ITEM_LABEL(n))}</th>${cols.map((c) => { const it = c.work && ((gr.items || {})[c.work.k] || []).find((x) => x.n === n); return it ? cell((s[c.work.k] || {})[n], it.max) : '<td></td>'; }).join('')}</tr>`));
     const workVal = (c) => { if (!c.work) return null; const v = g[c.work.k]; if (gnum(v)) return v; const its = (gr.items || {})[c.work.k] || [], sv = s[c.work.k] || {}; const got = its.filter((it) => gnum(sv[it.n])); return got.length ? { partial: Math.round(got.reduce((a, it) => a + sv[it.n], 0) * 100) / 100 } : null; };
@@ -130,6 +130,7 @@ if (document.getElementById('shell')) (() => {
       return `<section class="tp-card tp-grades"><div class="tp-ch"><div><h2>درجاتي — ${esc(gr.name)}</h2><p class="sub">${esc(gr.code)} • شعبة الرصد ${esc(gr.crn)}${gr.pair ? ` (العملي في الشعبة ${esc(gr.pair)})` : ''}${gr.term ? ' • ' + esc(gr.term) : ''}</p></div><span class="chip ${chip[1]}">${chip[0]}</span></div>
         ${el ? '' : `<div class="tp-gnote warn">حالتك في رايات «${esc((gr.row && gr.row.st) || '')}»، فلا تُرصد لك درجات في هذه الشعبة. راجع مدرب المقرر.</div>`}
         <div class="tw"><table class="tp-gt"><thead><tr><th>البند</th>${m.cols.map((c) => `<th class="n">${esc(c.p)}</th>`).join('')}</tr></thead><tbody>${m.rows.join('')}</tbody></table></div>
+        ${typeof gToneKey === 'string' ? `<div class="sub" style="margin-top:4px">${gToneKey}</div>` : ''}
         ${exTxt ? `<p class="sub">موعد الاختبار النهائي: ${exTxt}</p>` : ''}
         <p class="sub">${m.n ? `رُصد ${m.n} من ${m.need} مكوّنات. ` : 'لم يرصد المدرب درجاتك في هذا المقرر بعد، والجدول يبيّن توزيع الدرجات المعتمد. '}الدرجات كما رصدها مدرب المقرر في المنصة، والمعتمد النهائي ما يُرصد في رايات.</p></section>`;
     }).join('');

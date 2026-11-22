@@ -229,9 +229,15 @@ if (document.getElementById('shell')) (() => {
     }
     return { imp, undo, list, sync: () => {} };
   })();
-  const BK = WEB
-    ? { imp: (a) => window.HAADER_WEB.rpc('grades_import', a), list: (crn) => window.HAADER_WEB.rpc('grades_imports', { p_crn: crn }), undo: (id) => window.HAADER_WEB.rpc('grades_import_undo', { p_id: id }), sync: () => { try { window.HAADER_WEB.bump('gmarks'); } catch (e) { /* التحديث الدوري يكمل */ } } }
-    : LB;
+  /* الخادم: في الرابط مباشرة، وفي نسخة Claude (للاطلاع) عبر ربط Supabase لصاحب المنصة، وإلا قاعدة بيانات نسخة Claude */
+  const MIR = () => !!(window.HAADER_MIRROR && window.HAADER_MIRROR.rpc && A.rpcOn && A.rpcOn());
+  const SRV = (fn, a) => (WEB ? window.HAADER_WEB.rpc(fn, a) : window.HAADER_MIRROR.rpc(fn, a));
+  const BK = {
+    imp: (a) => (WEB || MIR() ? SRV('grades_import', a) : LB.imp(a)),
+    list: (crn) => (WEB || MIR() ? SRV('grades_imports', { p_crn: crn }) : LB.list(crn)),
+    undo: (id) => (WEB || MIR() ? SRV('grades_import_undo', { p_id: id }) : LB.undo(id)),
+    sync: () => { try { if (WEB) window.HAADER_WEB.bump('gmarks'); else if (MIR()) setTimeout(() => window.HAADER_MIRROR.pull(false), 300); } catch (e) { /* التحديث الدوري يكمل */ } }
+  };
   if (!WEB) {
     A.raw.gimp = A.raw.gimp || {};
     const o = boot; boot = async function () { await o(); if (typeof db !== 'undefined' && db) try { gWatch('gimp'); } catch (e) { /* سجل الاستيراد يبقى محلياً حتى التحميل التالي */ } };
@@ -290,7 +296,7 @@ if (document.getElementById('shell')) (() => {
       const gate = gGate(crn); if (gate) { plan.skip.push(`${crn}: ${gate}`); return; }
       const mc = metaCheck(meta, sec, a, hi);
       if (mc.block) { plan.skip.push(`${crn}: ${mc.block}`); return; }
-      const hc = a[hi], it = { crn, add: [], chg: [], same: 0, bad: [], sub: {}, direct: [], items: {}, warn: mc.warn || '' }, marks = gMarks(crn), seen = {};
+      const hc = a[hi], it = { crn, add: [], chg: [], same: 0, bad: [], sub: {}, direct: [], items: {}, inew: 0, isame: 0, ichg: [], warn: mc.warn || '' }, marks = gMarks(crn), seen = {};
       const L = sheetLayout(hc, sec), idc = hidx(hc, ['الرقم التدريبي']), its = {};
       const B = (o) => it.bad.push(Object.assign({ crn }, o));
       hc.forEach((h0) => { const m = COMP_RE.exec(norm(h0)); if (m && !G.compBy(sec, m[1].toUpperCase())) B({ k: m[1], msg: `العمود ${m[1]} ليس مكوّناً معتمداً في توزيع الشعبة ${crn}، فلم يُستورد.` }); });
@@ -315,6 +321,9 @@ if (document.getElementById('shell')) (() => {
         if (!row.el) { B({ id, name, msg: `غير قابل للرصد (${row.st || ''})، فلم تُستورد درجاته.` }); continue; }
         Object.entries(sub).forEach(([k, sv]) => {
           (it.items[id] = it.items[id] || {})[k] = sv;
+          /* البنود التفصيلية مقارنةً بالمحفوظ: جديدة، مطابقة، أو تخالف المحفوظ (لا تُستبدل إلا بموافقة) */
+          const saved = ((subOf(crn)[id] || {})[k]) || {};
+          Object.entries(sv).forEach(([n, raw]) => { const nv = typeof raw === 'number' ? raw : Number(String(raw).trim().replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))); const ov = saved[n]; if (ov === undefined || ov === null) it.inew++; else if (+ov === nv) it.isame++; else it.ichg.push({ id, k, n, old: ov, raw: nv, name }); });
           const x = compFromItems(its[k], k, sv);
           x.bad.forEach((b) => B({ id, name, k, msg: b }));
           if (x.bad.length) return;
@@ -334,14 +343,15 @@ if (document.getElementById('shell')) (() => {
     A.gPlan = plan;
     A.gErr = { file: file.name, rows: plan.items.flatMap((x) => x.bad).concat(plan.skip.map((m) => ({ msg: m }))) };
     const sum = (k) => plan.items.reduce((a, x) => a + (typeof x[k] === 'number' ? x[k] : x[k].length), 0);
-    const nsub = plan.items.reduce((a, x) => a + Object.keys(x.items).length, 0);
+    const nsub = plan.items.reduce((a, x) => a + Object.keys(x.items).length, 0), isum = (k) => plan.items.reduce((a, x) => a + (typeof x[k] === 'number' ? x[k] : x[k].length), 0);
+    const nTr = (x) => new Set(Object.keys(x.items).concat(x.add.map((y) => y.id), x.chg.map((y) => y.id))).size, cname = (crn) => { const g = A.raw.gsec[crn] || {}; return `${g.code || ''} ${g.name || ''}`.trim(); };
     const mline = meta ? `معرّف المصنف <b dir="ltr">${esc(meta.id)}</b> • ${esc(meta.term)} • ${esc(meta.trainerName || '')} • أُنشئ ${esc(new Date(meta.at).toLocaleString('ar-SA-u-nu-latn', { timeZone: 'Asia/Riyadh', dateStyle: 'medium', timeStyle: 'short' }))}` : 'مصنف بلا معرّف من المنصة';
     modal(`<h2>معاينة استيراد الدرجات</h2><div><b>${esc(file.name)}</b></div><div class="sub">${mline}</div>
-    <div class="grev"><span>درجات جديدة <b>${sum('add')}</b></span><span>تخالف المحفوظ <b class="${sum('chg') ? 'gred' : ''}">${sum('chg')}</b></span><span>مطابقة للمحفوظ <b>${sum('same')}</b></span><span>مرفوضة <b class="${sum('bad') ? 'gred' : ''}">${sum('bad')}</b></span></div>
-    <div class="tw"><table><thead><tr><th class="n">الشعبة</th><th class="n">جديدة</th><th class="n">تخالف المحفوظ</th><th class="n">مطابقة</th><th class="n">مرفوضة</th><th>ملاحظات</th></tr></thead><tbody>${plan.items.map((x) => `<tr><td class="n"><b>${x.crn}</b></td><td class="n">${x.add.length}</td><td class="n">${x.chg.length}</td><td class="n">${x.same}</td><td class="n">${x.bad.length}</td><td style="font-size:12.5px">${esc(x.warn)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="grev"><span>درجات جديدة <b>${sum('add')}</b></span><span>تخالف المحفوظ <b class="${sum('chg') ? 'gred' : ''}">${sum('chg')}</b></span><span>مطابقة للمحفوظ <b>${sum('same')}</b></span><span>مرفوضة <b class="${sum('bad') ? 'gred' : ''}">${sum('bad')}</b></span>${isum('inew') + isum('isame') + isum('ichg') ? `<span>بنود تفصيلية: جديدة <b>${isum('inew')}</b>، مطابقة <b>${isum('isame')}</b>، تخالف المحفوظ <b class="${isum('ichg') ? 'gred' : ''}">${isum('ichg')}</b></span>` : ''}<span>الشعب <b>${plan.items.length}</b></span></div>
+    <div class="tw"><table><thead><tr><th>المقرر</th><th class="n">الشعبة</th><th class="n">متدربون في الملف</th><th class="n">جديدة</th><th class="n">تخالف المحفوظ</th><th class="n">مطابقة</th><th class="n">بنود تفصيلية</th><th class="n">مرفوضة</th><th>ملاحظات</th></tr></thead><tbody>${plan.items.map((x) => `<tr><td style="font-size:12.5px">${esc(cname(x.crn))}</td><td class="n"><b>${x.crn}</b></td><td class="n">${nTr(x)}</td><td class="n">${x.add.length}</td><td class="n">${x.chg.length}</td><td class="n">${x.same}</td><td class="n">${x.inew + x.isame + x.ichg.length ? `${x.inew} جديدة • ${x.isame} مطابقة${x.ichg.length ? ` • <b class="gred">${x.ichg.length} تخالف</b>` : ''}` : '—'}</td><td class="n">${x.bad.length}</td><td style="font-size:12.5px">${esc(x.warn || (nTr(x) ? '' : 'لا درجات في ورقتها'))}</td></tr>`).join('')}</tbody></table></div>
     ${nsub ? `<div class="gnote info">درجات أعمال الفصل تُحسب من بنودها لـ${nsub} متدرباً، ويُرفع المجموع وحده إلى رايات.</div>` : ''}
     ${sum('bad') ? `<div class="gnote bad"><b>لن تُستورد:</b><ul>${plan.items.flatMap((x) => x.bad).slice(0, 25).map((b) => `<li>${b.crn ? `${b.crn} — ` : ''}${b.name ? esc(b.name) + ': ' : ''}${esc(b.msg)}</li>`).join('')}${sum('bad') > 25 ? `<li>و${sum('bad') - 25} أخرى في تقرير الأخطاء</li>` : ''}</ul></div>` : ''}
-    ${sum('chg') ? `<div class="gnote warn"><b>درجات محفوظة يخالفها الملف (القديمة والجديدة):</b><div class="tw" style="max-height:28vh;overflow:auto"><table><thead><tr><th class="n">الشعبة</th><th>المتدرب</th><th class="n">المكوّن</th><th class="n">المحفوظة</th><th class="n">في الملف</th></tr></thead><tbody>${plan.items.flatMap((x) => x.chg.map((c) => `<tr><td class="n">${x.crn}</td><td>${esc(c.name)}</td><td class="n">${esc(c.k)}</td><td class="n">${G.fmt(c.old)}</td><td class="n"><b>${G.fmt(c.raw)}</b></td></tr>`)).join('')}</tbody></table></div><label class="ck"><input type="checkbox" id="giOver"${plan.over ? ' checked' : ''}> تحديث الدرجات السابقة: استبدل المحفوظ بما في الملف (${sum('chg')})</label><span class="sub">دون هذا الخيار تبقى الدرجات المحفوظة كما هي.</span></div>` : ''}
+    ${sum('chg') + isum('ichg') ? `<div class="gnote warn"><b>درجات محفوظة يخالفها الملف (القديمة والجديدة):</b><div class="tw" style="max-height:28vh;overflow:auto"><table><thead><tr><th class="n">الشعبة</th><th>المتدرب</th><th class="n">المكوّن</th><th class="n">المحفوظة</th><th class="n">في الملف</th></tr></thead><tbody>${plan.items.flatMap((x) => x.chg.map((c) => `<tr><td class="n">${x.crn}</td><td>${esc(c.name)}</td><td class="n">${esc(c.k)}</td><td class="n">${G.fmt(c.old)}</td><td class="n"><b>${G.fmt(c.raw)}</b></td></tr>`).concat(x.ichg.map((c) => `<tr><td class="n">${x.crn}</td><td>${esc(c.name)}</td><td class="n">${esc(c.k)} › ${esc(c.n)}</td><td class="n">${G.fmt(c.old)}</td><td class="n"><b>${G.fmt(c.raw)}</b></td></tr>`))).join('')}</tbody></table></div><label class="ck"><input type="checkbox" id="giOver"${plan.over ? ' checked' : ''}> تحديث الدرجات السابقة: استبدل المحفوظ بما في الملف (${sum('chg') + isum('ichg')})</label><span class="sub">دون هذا الخيار تبقى الدرجات المحفوظة كما هي.</span></div>` : ''}
     ${plan.skip.length ? `<div class="gnote warn"><b>لم تُقرأ:</b><br>${plan.skip.map(esc).join('<br>')}</div>` : ''}
     <div class="sub">لا يُحفظ شيء قبل «اعتماد الاستيراد». الحفظ على الخادم بعد التحقق من صلاحيتك ومن كل درجة مرة أخرى.</div>
     <div class="row"><button class="btn p" data-act="g-xin-ok" ${sum('add') + sum('chg') + nsub ? '' : 'disabled'}>اعتماد الاستيراد</button>${A.gErr.rows.length ? '<button class="btn" data-act="gx-err">تنزيل تقرير الأخطاء</button>' : ''}<button class="btn" data-act="modal-close">إلغاء</button></div>`);
@@ -359,6 +369,8 @@ if (document.getElementById('shell')) (() => {
     const btn = $('[data-act="g-xin-ok"]'); if (btn) { btn.disabled = true; btn.textContent = 'جارٍ الحفظ…'; }
     const wbArg = plan.meta ? { id: plan.meta.id, term: plan.meta.term, trainer: plan.meta.trainer, crns: plan.meta.crns } : {};
     for (const it of plan.items) {
+      /* دون «تحديث الدرجات السابقة» لا يُرسل بند تفصيلي يخالف المحفوظ، فيبقى المحفوظ كما هو */
+      if (!over) (it.ichg || []).forEach((c) => { const o = (it.items[c.id] || {})[c.k]; if (!o) return; delete o[c.n]; if (!Object.keys(o).length) delete it.items[c.id][c.k]; if (!Object.keys(it.items[c.id]).length) delete it.items[c.id]; });
       if (!it.direct.length && !Object.keys(it.items).length) continue;
       try {
         const r = await BK.imp({ p_crn: it.crn, p_rows: it.direct, p_items: it.items, p_overwrite: !!over, p_file: plan.file, p_wb: wbArg });
@@ -396,14 +408,24 @@ if (document.getElementById('shell')) (() => {
   ACT['gx-imp'] = (e) => {
     const crn = e.dataset.crn, n = window.HAADER_GX ? window.HAADER_GX.mine().length : 1;
     modal(`<h2>استيراد درجات Excel</h2><div class="sub">ارفع المصنف بعد إدخال الدرجات. تُعرض معاينة كاملة قبل الحفظ.</div>
-      <div class="gxopt"><label class="ck"><input type="radio" name="gxs" value="one" checked> الشعبة ${esc(crn)} وحدها</label>
-      <label class="ck"><input type="radio" name="gxs" value="all"> جميع الشعب المسندة إليّ في المصنف (${n})</label>
+      <div class="gxopt"><label class="ck"><input type="radio" name="gxs" value="all" checked> جميع المقررات والشعب المسندة إليّ في المصنف (${n})</label>
+      <label class="ck"><input type="radio" name="gxs" value="one"> الشعبة ${esc(crn)} وحدها</label>
       <label class="ck"><input type="checkbox" id="gxo"> تحديث الدرجات السابقة إن اختلفت (تُعرض القديمة والجديدة قبل الاعتماد)</label></div>
       <div class="row"><label class="btn p">اختيار المصنف<input type="file" accept=".xlsx" hidden data-change="gx-file" data-crn="${esc(crn)}"></label><button class="btn" data-act="modal-close">إلغاء</button></div>`);
   };
   CHG['gx-file'] = (e) => {
     const f = e.files[0], crn = e.dataset.crn, all = ($('input[name="gxs"]:checked') || {}).value === 'all', over = !!($('#gxo') && $('#gxo').checked); e.value = '';
     if (f) gGradesImport(f, all ? null : crn, { over }).catch((x) => { console.error(x); toast('تعذرت قراءة الملف. تأكد أنه ملف Excel صحيح.'); });
+  };
+  /* استيراد المصنف كاملاً: كل المقررات وكل الشعب المسندة في عملية واحدة، بمعاينة واحدة ثم اعتماد واحد */
+  const allBtn = (cls) => `<label class="btn s ${cls || ''}" data-tip="يقرأ كل أوراق الشعب في المصنف ويعرض معاينة واحدة لها قبل الحفظ">استيراد المصنف لجميع المقررات والشعب<input type="file" accept=".xlsx" hidden data-change="gx-file-all"></label>`;
+  CHG['gx-file-all'] = (e) => { const f = e.files[0]; e.value = ''; if (f) gGradesImport(f, null, { over: false }).catch((x) => { console.error(x); toast('تعذرت قراءة الملف. تأكد أنه ملف Excel صحيح.'); }); };
+  const baseDash = VIEWS.gdash;
+  VIEWS.gdash = () => {
+    const h = baseDash(), mine = window.HAADER_GX ? window.HAADER_GX.mine() : [];
+    if (!mine.length || isViewer()) return h;
+    const box = `<section class="panel gxall"><div class="row between"><div><h2 style="margin:0">رصد الدرجات دفعة واحدة</h2><div class="sub">نزّل نموذج إدخال الدرجات لشعبك (${mine.length})، أدخل الدرجات في أوراقه، ثم ارفعه هنا: تُعرض معاينة لكل المقررات والشعب، ولا يُحفظ شيء قبل «اعتماد الاستيراد».</div></div><div class="row"><button class="btn s" data-act="gx-tpl">تحميل نموذج إدخال الدرجات Excel</button>${allBtn('p')}</div></div></section>`;
+    const i = h.indexOf('<section'); return i < 0 ? h + box : h.slice(0, i) + box + h.slice(i);
   };
   CHG['g-xin'] = (e) => { const f = e.files[0], crn = e.dataset.crn; e.value = ''; if (f) gGradesImport(f, crn, {}).catch(() => toast('تعذرت قراءة الملف. تأكد أنه ملف Excel صحيح.')); };
 
@@ -461,7 +483,7 @@ if (document.getElementById('shell')) (() => {
   const baseEntry = VIEWS.gentry;
   VIEWS.gentry = () => {
     let h = baseEntry(), crn = '';
-    h = h.replace(/<label class="btn s">استيراد الدرجات من Excel<input type="file" accept="\.xlsx" hidden data-change="g-xin" data-crn="(\d+)"><\/label>/, (m0, c) => { crn = c; return `<button class="btn s p" data-act="gx-tpl">تحميل نموذج إدخال الدرجات Excel</button><button class="btn s" data-act="gx-imp" data-crn="${c}">استيراد درجات Excel</button>`; });
+    h = h.replace(/<label class="btn s">استيراد الدرجات من Excel<input type="file" accept="\.xlsx" hidden data-change="g-xin" data-crn="(\d+)"><\/label>/, (m0, c) => { crn = c; return `<button class="btn s p" data-act="gx-tpl">تحميل نموذج إدخال الدرجات Excel</button>${allBtn()}<button class="btn s" data-act="gx-imp" data-crn="${c}">استيراد درجات Excel (خيارات)</button>`; });
     if (!crn) { const sec = A.gCrn && A.raw.gsec[A.gCrn]; if (sec && gList(sec.crn)) crn = sec.crn; }
     /* توزيع درجات المقرر (المعتمد وبنود أعمال السنة) فوق جدول المتدربين */
     const dsec = crn && A.raw.gsec[crn];

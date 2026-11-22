@@ -155,3 +155,27 @@ input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}
 .gvpv{margin-top:10px}
 
 .cprules{margin:4px 0 0;padding-inline-start:18px;font-size:12.5px;line-height:1.8}
+/* ---------- إدارة الشعب والمتدربين ---------- */
+.rs-tiles{margin-bottom:12px}
+.rs-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:8px 0 10px}
+.rs-card{display:flex;flex-direction:column;gap:5px;text-align:right;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;font:inherit;color:inherit;transition:border-color .15s,box-shadow .15s}
+.rs-card:hover,.rs-card:focus-within{border-color:var(--accent,#0066cc);box-shadow:0 2px 10px rgba(0,51,102,.12)}
+.rs-card b{font-size:15px}.rs-card span{font-size:13px;color:var(--muted,#5b6472)}
+.rs-card.off{opacity:.55;cursor:not-allowed}
+.rs-sec{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;background:var(--surface)}
+.rs-sec.bad{border-color:var(--bad);box-shadow:inset 3px 0 0 var(--bad)}
+.rs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px}
+.rs-grid label{display:flex;flex-direction:column;gap:3px;font-size:13px}
+.rs-grid input,.rs-grid select{width:100%;min-width:0}
+.rs-msg{font-size:12.5px;margin-top:6px;padding:5px 8px;border-radius:6px}
+.rs-msg.bad{background:var(--badbg);color:var(--bad)}.rs-msg.warn{background:var(--warnbg);color:var(--warn)}
+.rs-rows table input{width:100%;min-width:70px;box-sizing:border-box}
+.rs-rows .rs-crn{width:78px;min-width:64px}.rs-rows .rs-id{width:112px}.rs-rows .rs-name{min-width:190px}.rs-rows .rs-em{min-width:170px}.rs-rows .rs-mob{width:115px}
+.rs-rows tr.rs-ok td:first-child{box-shadow:inset -3px 0 0 var(--ok)}
+.rs-rows tr.rs-dup{background:var(--warnbg)}.rs-rows tr.rs-dup td:first-child{box-shadow:inset -3px 0 0 var(--warn)}
+.rs-rows tr.rs-fix{background:var(--badbg)}.rs-rows tr.rs-fix td:first-child{box-shadow:inset -3px 0 0 var(--bad)}
+.rs-rows tr.rs-ex{opacity:.5}.rs-rows tr.rs-ex td{text-decoration:line-through}.rs-rows tr.rs-ex td.rs-act{text-decoration:none}
+.rs-why{display:block;font-size:12px;margin-top:3px;max-width:320px}
+.rs-act{white-space:nowrap}.rs-act .btn{margin-inline-start:3px}
+.rs-bar{position:sticky;bottom:0;background:var(--surface);padding:10px 0;margin-top:10px;border-top:1px solid var(--line);z-index:2}
+@media (max-width:640px){.rs-actions{grid-template-columns:1fr}.rs-bar .btn{flex:1 1 100%}.rs-act{white-space:normal}}

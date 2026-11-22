@@ -217,7 +217,10 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
   const RPC = {
     grades_import: "grades_import(a->>'p_crn', coalesce(a->'p_rows', '[]'::jsonb), coalesce(a->'p_items', '{}'::jsonb), coalesce((a->>'p_overwrite')::boolean, false), coalesce(a->>'p_file', ''), coalesce(a->'p_wb', '{}'::jsonb))",
     grades_imports: "grades_imports(a->>'p_crn')",
-    grades_import_undo: "grades_import_undo(a->>'p_id')"
+    grades_import_undo: "grades_import_undo(a->>'p_id')",
+    roster_apply: "roster_apply(coalesce(a->'p', '{}'::jsonb))",
+    roster_imports: "roster_imports(coalesce((a->>'p_limit')::int, 50))",
+    roster_contacts: "roster_contacts()"
   };
   async function rpc(fn, args) {
     if (!RPC[fn]) throw new Error('عملية غير معروفة.');

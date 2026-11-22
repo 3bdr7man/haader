@@ -39,7 +39,7 @@ rep("const isAdmin = () => !!(A.me && A.me.role === 'admin');", "const isAdmin =
 rep("if (!A.me || A.me.role === 'admin' || A.me.role === 'viewer'", "if (!A.me || (A.me.role === 'admin' && !A.asTrainer) || A.me.role === 'viewer'")
 
 rep('</style>\n<div id="gate"', '\n' + web('shared.css') + '\n' + web('grades.css') + '\n' + web('theme-v2.css') + '</style>\n<div id="gate"')
-post = web('shared.js') + '\n' + web('portal.js') + '\n' + web('timeline.js') + '\n' + web('advisor.js') + '\n' + web('mirror.js') + '\n' + web('grades-web.js') + '\n' + web('grades-xl.js') + '\n' + web('gvis.js') + '\n' + web('theme-v2.js')
+post = web('shared.js') + '\n' + web('portal.js') + '\n' + web('timeline.js') + '\n' + web('advisor.js') + '\n' + web('mirror.js') + '\n' + web('grades-web.js') + '\n' + web('grades-xl.js') + '\n' + web('gvis.js') + '\n' + web('roster.js') + '\n' + web('theme-v2.js')
 assert '</script' not in post
 rep('\nboot();\n', '\n' + post + '\nboot();\n')
 
@@ -49,7 +49,10 @@ out.mkdir(parents=True, exist_ok=True)
 v = out / 'vendor'
 v.mkdir(exist_ok=True)
 for f in (R / 'docs/vendor').iterdir():
-    shutil.copy2(f, v / f.name)
+    if f.is_dir():
+        shutil.copytree(f, v / f.name, dirs_exist_ok=True)
+    else:
+        shutil.copy2(f, v / f.name)
 
 # فحص صياغة كل السكربتات
 import re

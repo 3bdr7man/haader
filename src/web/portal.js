@@ -48,6 +48,7 @@ if (document.getElementById('shell')) (() => {
       const row = (g.rows || []).find((r) => r.id === t); if (!row) return;
       const gm = (A.raw.gmarks || {})[crn] || {};
       grades[crn] = { crn, code: g.code || '', name: g.name || '', term: g.term || '', pair: g.pair || '', comps: g.comps || [], items: g.items || {}, exam: g.exam || {}, row: { el: row.el, st: row.st }, g: (gm.g || {})[t] || {}, s: (gm.s || {})[t] || {} };
+      if (window.HAADER_GV) grades[crn] = window.HAADER_GV.apply(grades[crn], (A.raw.gvis || {})[crn]);
     });
     return { id: t, name, grades, sections: secs, marks: mks, meta: { calendar: M.calendar || {}, settings: M.settings || {}, timeline: M.timeline || null, excuses: rowsOf('excuses'), reinstated: rowsOf('reinstated') }, warn, acc: ta ? { temp: !!ta.temp, st: ta.st || '' } : null };
   }
@@ -106,35 +107,42 @@ if (document.getElementById('shell')) (() => {
       return { p, work, fin, other: cs.filter((c) => c !== work && c !== fin) };
     });
     const itemNames = []; cols.forEach((c) => ((c.work && (gr.items || {})[c.work.k]) || []).forEach((it) => { if (!itemNames.includes(it.n)) itemNames.push(it.n); }));
-    const g = gr.g || {}, s = gr.s || {};
+    const g = gr.g || {}, s = gr.s || {}, H = new Set(gr.hid || []);
+    /* إدارة ظهور الدرجات: المخفي لا يصل من الخادم أصلاً، ويُعرض مكانه «الدرجة غير متاحة حالياً» */
+    const hc = (max) => `<td class="n tp-ghid"><span class="tp-gx">الدرجة غير متاحة حالياً</span>${gnum(max) ? `<small> / ${gfmt(max)}</small>` : ''}</td>`;
+    const workHid = (c) => !!c.work && (H.has('c:' + c.work.k) || ((gr.items || {})[c.work.k] || []).some((it) => H.has('i:' + c.work.k + ':' + it.n)));
     const cell = (v, max, cls) => `<td class="n${cls ? ' ' + cls : ''}"${gnum(v) && gnum(max) && typeof gToneAt === 'function' ? gToneAt(v, max) : ''}>${gnum(v) ? `<b>${gfmt(v)}</b>` : '<span class="tp-gx">—</span>'}${gnum(max) ? `<small> / ${gfmt(max)}</small>` : ''}</td>`;
     const rows = [];
-    itemNames.forEach((n) => rows.push(`<tr><th>${esc(ITEM_LABEL(n))}</th>${cols.map((c) => { const it = c.work && ((gr.items || {})[c.work.k] || []).find((x) => x.n === n); return it ? cell((s[c.work.k] || {})[n], it.max) : '<td></td>'; }).join('')}</tr>`));
+    itemNames.forEach((n) => rows.push(`<tr><th>${esc(ITEM_LABEL(n))}</th>${cols.map((c) => { const it = c.work && ((gr.items || {})[c.work.k] || []).find((x) => x.n === n); return it ? (H.has('i:' + c.work.k + ':' + n) ? hc(it.max) : cell((s[c.work.k] || {})[n], it.max)) : '<td></td>'; }).join('')}</tr>`));
     const workVal = (c) => { if (!c.work) return null; const v = g[c.work.k]; if (gnum(v)) return v; const its = (gr.items || {})[c.work.k] || [], sv = s[c.work.k] || {}; const got = its.filter((it) => gnum(sv[it.n])); return got.length ? { partial: Math.round(got.reduce((a, it) => a + sv[it.n], 0) * 100) / 100 } : null; };
-    rows.push(`<tr class="sum"><th>مجموع أعمال السنة</th>${cols.map((c) => { if (!c.work) return '<td></td>'; const v = workVal(c); return v && typeof v === 'object' ? `<td class="n"><b>${gfmt(v.partial)}</b><small> / ${gfmt(c.work.max)}</small><em class="tp-gp">حتى الآن</em></td>` : cell(v, c.work.max); }).join('')}</tr>`);
-    cols.forEach((c) => c.other.forEach((o) => rows.push(`<tr><th>${esc(o.desc || o.k)}</th>${cols.map((x) => (x === c ? cell(g[o.k], o.max) : '<td></td>')).join('')}</tr>`)));
-    rows.push(`<tr class="fin"><th>الاختبار النهائي</th>${cols.map((c) => (c.fin ? cell(g[c.fin.k], c.fin.max) : '<td></td>')).join('')}</tr>`);
-    const partTot = cols.map((c) => { const cs = [c.work, c.fin].concat(c.other).filter(Boolean); const max = cs.reduce((a, x) => a + (+x.max || 0), 0), got = cs.filter((x) => gnum(g[x.k])); return { max, v: got.length ? got.reduce((a, x) => a + g[x.k], 0) : null, full: got.length === cs.length }; });
-    if (cols.length > 1) rows.push(`<tr class="sum tot"><th>مجموع الجزء</th>${partTot.map((t) => cell(t.v, t.max)).join('')}</tr>`);
+    rows.push(`<tr class="sum"><th>مجموع أعمال السنة</th>${cols.map((c) => { if (!c.work) return '<td></td>'; if (workHid(c)) return hc(c.work.max); const v = workVal(c); return v && typeof v === 'object' ? `<td class="n"><b>${gfmt(v.partial)}</b><small> / ${gfmt(c.work.max)}</small><em class="tp-gp">حتى الآن</em></td>` : cell(v, c.work.max); }).join('')}</tr>`);
+    cols.forEach((c) => c.other.forEach((o) => rows.push(`<tr><th>${esc(o.desc || o.k)}</th>${cols.map((x) => (x === c ? (H.has('c:' + o.k) ? hc(o.max) : cell(g[o.k], o.max)) : '<td></td>')).join('')}</tr>`)));
+    rows.push(`<tr class="fin"><th>الاختبار النهائي</th>${cols.map((c) => (c.fin ? (H.has('c:' + c.fin.k) ? hc(c.fin.max) : cell(g[c.fin.k], c.fin.max)) : '<td></td>')).join('')}</tr>`);
+    const partTot = cols.map((c) => { const cs = [c.work, c.fin].concat(c.other).filter(Boolean); const max = cs.reduce((a, x) => a + (+x.max || 0), 0), got = cs.filter((x) => gnum(g[x.k])); return { max, v: got.length ? got.reduce((a, x) => a + g[x.k], 0) : null, full: got.length === cs.length, hid: H.has('total') || workHid(c) || cs.some((x) => H.has('c:' + x.k)) }; });
+    if (cols.length > 1) rows.push(`<tr class="sum tot"><th>مجموع الجزء</th>${partTot.map((t) => (t.hid ? hc(t.max) : cell(t.v, t.max))).join('')}</tr>`);
     const max = comps.reduce((a, c) => a + (+c.max || 0), 0), got = comps.filter((c) => gnum(g[c.k])), tot = got.reduce((a, c) => a + g[c.k], 0);
-    return { cols, rows, max, tot, n: got.length, need: comps.length };
+    return { cols, rows, max, tot, n: got.length, need: comps.length, hid: H.size > 0, hidTot: H.has('total') };
   }
   function gradesCards() {
     const G0 = P.data && P.data.grades; if (!G0) return '';
     const list = Object.values(G0).sort((a, b) => String(a.name).localeCompare(String(b.name), 'ar') || String(a.crn).localeCompare(String(b.crn)));
     if (!list.length) return '<section class="tp-card tp-grades"><h2>درجاتي</h2><p class="sub">لا توجد لك شعبة رصد درجات في المنصة بعد.</p></section>';
-    return list.map((gr) => {
+    return list.map(gradeCard).join('');
+  }
+  function gradeCard(gr) {
+    {
       const m = gradeModel(gr), el = !gr.row || gr.row.el !== false;
-      const chip = !m.n ? ['لم تُرصد بعد', ''] : m.n === m.need ? [`${gfmt(m.tot)} من ${gfmt(m.max)}`, 'ok'] : [`المرصود ${gfmt(m.tot)}`, 'info'];
+      const chip = m.hidTot || m.hid ? [m.hidTot ? 'المجموع غير متاح حالياً' : 'بعض الدرجات غير متاحة حالياً', ''] : !m.n ? ['لم تُرصد بعد', ''] : m.n === m.need ? [`${gfmt(m.tot)} من ${gfmt(m.max)}`, 'ok'] : [`المرصود ${gfmt(m.tot)}`, 'info'];
       const ex = gr.exam || {}, exTxt = [ex.date, ex.time, ex.place].filter(Boolean).map(esc).join(' • ');
       return `<section class="tp-card tp-grades"><div class="tp-ch"><div><h2>درجاتي — ${esc(gr.name)}</h2><p class="sub">${esc(gr.code)} • شعبة الرصد ${esc(gr.crn)}${gr.pair ? ` (العملي في الشعبة ${esc(gr.pair)})` : ''}${gr.term ? ' • ' + esc(gr.term) : ''}</p></div><span class="chip ${chip[1]}">${chip[0]}</span></div>
         ${el ? '' : `<div class="tp-gnote warn">حالتك في رايات «${esc((gr.row && gr.row.st) || '')}»، فلا تُرصد لك درجات في هذه الشعبة. راجع مدرب المقرر.</div>`}
         <div class="tw"><table class="tp-gt"><thead><tr><th>البند</th>${m.cols.map((c) => `<th class="n">${esc(c.p)}</th>`).join('')}</tr></thead><tbody>${m.rows.join('')}</tbody></table></div>
         ${typeof gToneKey === 'string' ? `<div class="sub" style="margin-top:4px">${gToneKey}</div>` : ''}
         ${exTxt ? `<p class="sub">موعد الاختبار النهائي: ${exTxt}</p>` : ''}
-        <p class="sub">${m.n ? `رُصد ${m.n} من ${m.need} مكوّنات. ` : 'لم يرصد المدرب درجاتك في هذا المقرر بعد، والجدول يبيّن توزيع الدرجات المعتمد. '}الدرجات كما رصدها مدرب المقرر في المنصة، والمعتمد النهائي ما يُرصد في رايات.</p></section>`;
-    }).join('');
+        <p class="sub">${m.n ? `رُصد ${m.n} من ${m.need} مكوّنات. ` : 'لم يرصد المدرب درجاتك في هذا المقرر بعد، والجدول يبيّن توزيع الدرجات المعتمد. '}${m.hid ? 'بعض الدرجات لم يُتحها مدرب المقرر بعد. ' : ''}الدرجات كما رصدها مدرب المقرر في المنصة، والمعتمد النهائي ما يُرصد في رايات.</p></section>`;
+    }
   }
+  window.HAADER_TPG = { card: (gr) => gradeCard(gr) };
   function paint() {
     const root = $('#tportal'); if (!root) return;
     const rows = rowsOf(), name = (P.data && P.data.name) || (P.me && P.me.name) || '';

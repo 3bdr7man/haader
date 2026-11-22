@@ -9,7 +9,7 @@
    ==================================================================== */
 if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
   const SRV = 'Supabase', PROJECT = 'urtdulwbpabslicxtsoa', EVERY = 10000;
-  const COLS = ['sections', 'marks', 'notes', 'meta', 'qrs', 'warnlog', 'bosla', 'bviol', 'bcase', 'bforms', 'gsec', 'gmarks', 'gcfg', 'gsnap', 'gops', 'accounts', 'tacc'];
+  const COLS = ['sections', 'marks', 'notes', 'meta', 'qrs', 'warnlog', 'bosla', 'bviol', 'bcase', 'bforms', 'gsec', 'gmarks', 'gcfg', 'gsnap', 'gops', 'gvis', 'accounts', 'tacc'];
   /* الحسابات: تُنقل بياناتها (الاسم والدور والصلاحيات والحالة وآخر دخول) دون بصمات كلمات المرور،
      ولا يُحذف منها شيء هنا. دخول نسخة Claude لصاحب المنصة بحسابه في Claude، فلا يتأثر بتغيير كلمة المرور */
   const CRED = ['salt', 'iter', 'hash', 'mustChange'];
@@ -167,6 +167,7 @@ if (document.getElementById('shell') && !window.HAADER_WEB) (() => {
     if (patch && typeof patch === 'object' && Object.keys(patch).every((k) => k === 'lastLogin')) return;   // تسجيل آخر دخول: يتولاه الرابط
     if (A.wtOn() && WT_PATH.test(String(path))) return wtPush(String(path), patch, op || 'update');
     if (A.rpcOn() && /^glogs?\//.test(String(path))) return;   // سجل الدرجات المحلي: الخادم يسجل الاستيراد في سجله
+    if (A.rpcOn() && /^gvis\/[0-9A-Za-z_-]+$/.test(String(path))) return wtPush(String(path), patch, op || 'update');   // ظهور الدرجات: يُحفظ في الرابط
     if (Date.now() - lastToast > 4000) { lastToast = Date.now(); toast('نسخة Claude للاطلاع فقط: سجّل من الرابط، وتصل التعديلات هنا تلقائياً.'); }
     reload(path);
   };

@@ -29,11 +29,11 @@ if (document.getElementById('shell')) (() => {
     C.loading = SRV('ctl_config').then((c) => { const changed = c && c.v !== C.cfg.v; C.cfg = Object.assign({}, DEF, c || {}); C.at = Date.now();
       try { localStorage.setItem(KEY, JSON.stringify({ cfg: Object.assign({}, C.cfg, { svc: C.cfg.svc }), at: C.at })); } catch (e) { /* */ }
       if (changed && A.me) { try { buildNav(); render(true); } catch (e) { /* */ } }
-      return C.cfg; }).catch(() => C.cfg).finally(() => { C.loading = null; });
+      return C.cfg; }).catch((e) => { if (e && (e.status === 404 || /Could not find|does not exist/i.test(e.message || ''))) C.noCtl = true; return C.cfg; }).finally(() => { C.loading = null; });
     return C.loading;
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && A.me) load(false); });
-  const svc = (id) => C.cfg.svc[id] || (live() ? { v: false, e: false, a: false } : { v: true, e: true, a: true });
+  const svc = (id) => C.cfg.svc[id] || (live() && !C.noCtl && C.cfg.v ? { v: false, e: false, a: false } : { v: true, e: true, a: true });
   const vis = (id) => isAdmin() || !!svc(id).v;
   const ok = (id) => !!svc(id).e && !!svc(id).a;
   window.HAADER_CTL = { C, load, vis, ok, svc };

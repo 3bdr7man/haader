@@ -53,6 +53,15 @@ for f in (R / 'docs/vendor').iterdir():
         shutil.copytree(f, v / f.name, dirs_exist_ok=True)
     else:
         shutil.copy2(f, v / f.name)
+# نسخة Claude لا تخدم ملفات ‎.gz‎: بيانات اللغة للتعرف الضوئي تُنشر بامتداد مخدوم، ويُعدَّل مسار جلبها في عامل Tesseract
+_t = v / 'tess'
+if _t.exists():
+    for g in _t.glob('*.traineddata.gz'):
+        g.rename(g.with_name(g.name + '.wasm'))
+    _w = _t / 'worker.min.js'; _s = _w.read_text()
+    _old = '.concat(i,".traineddata").concat(w?".gz":""),t.next=29'
+    assert _s.count(_old) == 1, 'tesseract worker: مسار بيانات اللغة تغيّر'
+    _w.write_text(_s.replace(_old, '.concat(i,".traineddata").concat(w?".gz.wasm":""),t.next=29'))
 
 # فحص صياغة كل السكربتات
 import re

@@ -37,7 +37,7 @@ if (document.getElementById('shell')) (() => {
   function addSection(wb, sec, ctx) {
     const crn = sec.crn, ws = wb.addWorksheet(crn, { views: [{ rightToLeft: true, state: 'frozen', xSplit: 3, ySplit: 5, showGridLines: false }], properties: { tabColor: { argb: BLUE } } });
     sheetBase(ws, true);
-    const parts = G.parts(sec), its = sec.items || {}, marks = gMarks(crn), sub = ((A.raw.gmarks[crn] || {}).s) || {}, rows = sec.rows || [];
+    const parts = G.parts(sec), its = sec.items || {}, marks = gMarks(crn), sub = ((A.raw.gmarks[crn] || {}).s) || {}, rows = gElFirst(sec.rows);   // غير القابلين للرصد في آخر الورقة
     const cols = [{ h: 'م', w: 5 }, { h: 'الرقم التدريبي', w: 13 }, { h: 'اسم المتدرب', w: 36 }, { h: 'حالة القيد في رايات', w: 19 }, { h: 'قابل للرصد', w: 9 }];
     const inputs = [], comps = [], partCols = [];
     Object.keys(parts).forEach((p) => {

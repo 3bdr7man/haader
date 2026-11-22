@@ -1044,7 +1044,7 @@ input[aria-invalid="true"]{border-color:var(--bad,#B42318)!important}
 </div>
 <div id="toast" role="status" dir="rtl" hidden></div>
 <div id="tip" dir="rtl" hidden></div>
-<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="a2e366267785";</script>
+<script>window.HAADER_CFG={"url": "https://urtdulwbpabslicxtsoa.supabase.co", "key": "sb_publishable_6VS8qehDCUIjjOOgB6hchg_w9J-4ubi"};window.HAADER_BUILD="4bb860e819eb";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 /* ====================================================================
@@ -5229,6 +5229,8 @@ VIEWS.gsec = () => {
 };
 
 /* ---------- جدول المتدربين وإدخال الدرجات ---------- */
+/* غير القابلين للرصد في آخر قائمة الشعبة دائماً، مع بقاء ترتيب كل فئة كما هو (في الجدول والطباعة والتصدير ونموذج Excel) */
+const gElFirst = (rows) => (rows || []).map((r, i) => [r, i]).sort((a, b) => (b[0].el ? 1 : 0) - (a[0].el ? 1 : 0) || a[1] - b[1]).map((x) => x[0]);
 const gRowSt = (rs) => `<span class="chip ${{ done: 'ok', err: 'bad', part: 'warn', none: '', na: 'org' }[rs.st]}"${rs.bad.length ? ` data-tip="${esc(rs.bad.join(' • '))}"` : ''}>${G.ROW_ST[rs.st]}</span>`;
 function gGrid(sec) {
   const crn = sec.crn;
@@ -5236,7 +5238,7 @@ function gGrid(sec) {
   const marks = gMarks(crn), st = gSt(sec), s = st.stats, gate = gGate(crn), edit = !gate, parts = G.parts(sec), pk = Object.keys(parts), F = GX.f;
   const ord = { name: (a, b) => String(a.name).localeCompare(String(b.name), 'ar'), id: (a, b) => String(a.id).localeCompare(String(b.id)), total: (a, b) => (s.rs[b.id].total ?? -1) - (s.rs[a.id].total ?? -1), state: (a, b) => 'err part none done na'.split(' ').indexOf(s.rs[a.id].st) - 'err part none done na'.split(' ').indexOf(s.rs[b.id].st), file: () => 0 };
   const show = { all: () => true, elig: (r) => r.el, done: (r) => s.rs[r.id].st === 'done', part: (r) => s.rs[r.id].st === 'part', none: (r) => s.rs[r.id].st === 'none', err: (r) => s.rs[r.id].st === 'err', na: (r) => !r.el };
-  const rows = sec.rows.filter(show[F.show] || show.all).slice().sort(ord[F.sort] || ord.name);
+  const rows = sec.rows.filter(show[F.show] || show.all).slice().sort((a, b) => (b.el ? 1 : 0) - (a.el ? 1 : 0) || (ord[F.sort] || ord.name)(a, b));
   const cell = (r, c, rs) => {
     const v = rs.g[c.k], bad = G.storedBad(sec, c.k, v);
     if (!r.el) return `<td class="n gna">${G.isNum(v) ? `<span class="gstale" data-tip="درجة محفوظة لمتدرب غير قابل للرصد، ولن تُرفع">${G.fmt(v)}</span>${edit ? ` <button class="lnk small" data-act="g-clear" data-crn="${crn}" data-id="${r.id}" data-k="${c.k}">مسح</button>` : ''}` : '—'}</td>`;
@@ -5493,7 +5495,7 @@ const gDocTop = (title, sec) => docHead(`${title}<br>${ORG} – ${COLLEGE} – $
 function gPrintSheet(crn) {
   const sec = A.raw.gsec[crn]; if (!gSee(crn)) return;
   const st = gSt(sec), s = st.stats, cs = G.comps(sec), f = sec.flow || {};
-  const body = `${gDocTop('كشف رصد الدرجات', sec)}<p>المدرب: ${esc(gOwnerName(crn))} — توزيع الدرجات: ${esc(gDistText(sec))} — حالة الرصد: ${st.label}${f.lock && f.lock.on && st.lockedOk ? ` — نسخة معتمدة ${esc(f.lock.snap)} (${esc(f.lock.sig)})` : ' — غير معتمد'}</p><table><thead><tr><th>م</th><th>الرقم التدريبي</th><th>اسم المتدرب</th><th>حالة القيد</th>${cs.map((c) => `<th>${esc(c.k)}<br>${G.fmt(c.max)}</th>`).join('')}<th>المجموع<br>${G.fmt(G.total(sec))}</th><th>حالة الرصد</th></tr></thead><tbody>${sec.rows.map((r, i) => { const rs = s.rs[r.id]; return `<tr><td>${i + 1}</td><td>${esc(r.id)}</td><td>${esc(r.name)}</td><td>${esc(r.st || '')}</td>${cs.map((c) => `<td>${r.el && G.isNum(rs.g[c.k]) ? G.fmt(rs.g[c.k]) : ''}</td>`).join('')}<td>${r.el && rs.total != null ? G.fmt(rs.total) : ''}</td><td>${G.ROW_ST[rs.st]}</td></tr>`; }).join('')}</tbody></table><p>المتدربون ${s.n} — القابلون للرصد ${s.elig} — مكتمل ${s.done} — المتوسط ${s.avg == null ? '—' : G.fmt(s.avg)} — طُبع ${gDT(new Date().toISOString())}</p><div class="sign"><span>مدرب المقرر: ${esc(gOwnerName(crn))}</span><span>رئيس القسم: ${esc(orgInfo().head)}</span></div>`;
+  const body = `${gDocTop('كشف رصد الدرجات', sec)}<p>المدرب: ${esc(gOwnerName(crn))} — توزيع الدرجات: ${esc(gDistText(sec))} — حالة الرصد: ${st.label}${f.lock && f.lock.on && st.lockedOk ? ` — نسخة معتمدة ${esc(f.lock.snap)} (${esc(f.lock.sig)})` : ' — غير معتمد'}</p><table><thead><tr><th>م</th><th>الرقم التدريبي</th><th>اسم المتدرب</th><th>حالة القيد</th>${cs.map((c) => `<th>${esc(c.k)}<br>${G.fmt(c.max)}</th>`).join('')}<th>المجموع<br>${G.fmt(G.total(sec))}</th><th>حالة الرصد</th></tr></thead><tbody>${gElFirst(sec.rows).map((r, i) => { const rs = s.rs[r.id]; return `<tr><td>${i + 1}</td><td>${esc(r.id)}</td><td>${esc(r.name)}</td><td>${esc(r.st || '')}</td>${cs.map((c) => `<td>${r.el && G.isNum(rs.g[c.k]) ? G.fmt(rs.g[c.k]) : ''}</td>`).join('')}<td>${r.el && rs.total != null ? G.fmt(rs.total) : ''}</td><td>${G.ROW_ST[rs.st]}</td></tr>`; }).join('')}</tbody></table><p>المتدربون ${s.n} — القابلون للرصد ${s.elig} — مكتمل ${s.done} — المتوسط ${s.avg == null ? '—' : G.fmt(s.avg)} — طُبع ${gDT(new Date().toISOString())}</p><div class="sign"><span>مدرب المقرر: ${esc(gOwnerName(crn))}</span><span>رئيس القسم: ${esc(orgInfo().head)}</span></div>`;
   save(`كشف درجات ${crn}.html`, printDoc(`كشف درجات ${crn}`, body + PRINT_JS));
 }
 function gPrintReady() {
@@ -5690,7 +5692,7 @@ function gSecAoa(sec, withGrades) {
   Object.keys(parts).forEach((p) => { parts[p].forEach((c) => head.push(c.k)); head.push(p); });
   head.push('المجموع', 'حالة الإدخال', 'ساعات الحضور (رايات)', 'آخر حضور (رايات)');
   const lim = ['', 'الحد الأعلى لكل مكوّن', '', '', '']; Object.keys(parts).forEach((p) => { parts[p].forEach((c) => lim.push(c.max)); lim.push(parts[p].reduce((a, c) => a + c.max, 0)); }); lim.push(G.total(sec), '', '', '');
-  const rows = sec.rows.map((r, i) => { const rs = s.rs[r.id], o = [i + 1, r.name, r.id, r.st || '', r.el ? 'نعم' : 'لا']; Object.keys(parts).forEach((p) => { parts[p].forEach((c) => o.push(withGrades && r.el && G.isNum(rs.g[c.k]) ? rs.g[c.k] : null)); o.push(withGrades && r.el && rs.part[p] != null ? rs.part[p] : null); }); o.push(withGrades && r.el ? rs.total : null, G.ROW_ST[rs.st], r.hrs == null ? null : r.hrs, r.last || ''); return o; });
+  const rows = gElFirst(sec.rows).map((r, i) => { const rs = s.rs[r.id], o = [i + 1, r.name, r.id, r.st || '', r.el ? 'نعم' : 'لا']; Object.keys(parts).forEach((p) => { parts[p].forEach((c) => o.push(withGrades && r.el && G.isNum(rs.g[c.k]) ? rs.g[c.k] : null)); o.push(withGrades && r.el && rs.part[p] != null ? rs.part[p] : null); }); o.push(withGrades && r.el ? rs.total : null, G.ROW_ST[rs.st], r.hrs == null ? null : r.hrs, r.last || ''); return o; });
   return [[`كشف رصد الدرجات — ${sec.code} ${sec.name} — الشعبة ${sec.crn}`], ['الرقم المرجعي للشعبة', sec.crn, '', 'الفصل التدريبي', sec.term || '', '', 'توزيع الدرجات', gDistText(sec)], lim, head].concat(rows);
 }
 async function gExport(crns, name) {
@@ -7987,7 +7989,7 @@ if (document.getElementById('shell')) (() => {
       head.push(p); lim.push(parts[p].reduce((a, c) => a + c.max, 0));
     });
     head.push('المجموع', 'حالة الإدخال', 'ساعات الحضور (رايات)', 'آخر حضور (رايات)'); lim.push(G.total(sec), '', '', '');
-    const rows = sec.rows.map((r, i) => {
+    const rows = gElFirst(sec.rows).map((r, i) => {
       const rs = s.rs[r.id], o = [i + 1, r.name, r.id, r.st || '', r.el ? 'نعم' : 'لا'], show = withGrades && r.el;
       Object.keys(parts).forEach((p) => { parts[p].forEach((c) => { (its[c.k] || []).forEach((it) => { const v = (((sub[r.id] || {})[c.k]) || {})[it.n]; o.push(show && G.isNum(v) ? v : null); }); o.push(show && G.isNum(rs.g[c.k]) ? rs.g[c.k] : null); }); o.push(show && rs.part[p] != null ? rs.part[p] : null); });
       o.push(show ? rs.total : null, G.ROW_ST[rs.st], r.hrs == null ? null : r.hrs, r.last || ''); return o;
@@ -8036,7 +8038,7 @@ if (document.getElementById('shell')) (() => {
   function addSection(wb, sec, ctx) {
     const crn = sec.crn, ws = wb.addWorksheet(crn, { views: [{ rightToLeft: true, state: 'frozen', xSplit: 3, ySplit: 5, showGridLines: false }], properties: { tabColor: { argb: BLUE } } });
     sheetBase(ws, true);
-    const parts = G.parts(sec), its = sec.items || {}, marks = gMarks(crn), sub = ((A.raw.gmarks[crn] || {}).s) || {}, rows = sec.rows || [];
+    const parts = G.parts(sec), its = sec.items || {}, marks = gMarks(crn), sub = ((A.raw.gmarks[crn] || {}).s) || {}, rows = gElFirst(sec.rows);   // غير القابلين للرصد في آخر الورقة
     const cols = [{ h: 'م', w: 5 }, { h: 'الرقم التدريبي', w: 13 }, { h: 'اسم المتدرب', w: 36 }, { h: 'حالة القيد في رايات', w: 19 }, { h: 'قابل للرصد', w: 9 }];
     const inputs = [], comps = [], partCols = [];
     Object.keys(parts).forEach((p) => {

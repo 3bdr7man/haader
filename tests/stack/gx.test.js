@@ -104,7 +104,7 @@ print(json.dumps(o, ensure_ascii=False, default=str))`, TPL));
   check('شعب المدرب وحده (63912 لمدرب آخر ليست فيه)', !X.sheets.includes('63912'));
   check('ورقة المعرّف مخفية تماماً', X.states._haader === 'veryHidden');
   check('المعرّف: الفصل والمدرب والشعب والبصمة', X.meta.trainer === IDS.t1 && /الفصل التدريبي الأول 1448/.test(X.meta.term) && X.meta.crns.join() === '63854,63905' && X.meta.sigs['63854'] && /^HGB-/.test(X.meta.id), X.meta);
-  check('كل متدربي الشعبة بأرقامهم ودون تكرار', JSON.stringify(X.ids) === JSON.stringify(gs('63854').rows.map((r) => r.id)) && new Set(X.ids).size === X.ids.length, X.ids.length);
+  check('كل متدربي الشعبة بأرقامهم ودون تكرار، وغير القابلين للرصد في آخر الورقة', JSON.stringify(X.ids) === JSON.stringify(gs('63854').rows.filter((r) => r.el).concat(gs('63854').rows.filter((r) => !r.el)).map((r) => r.id)) && new Set(X.ids).size === X.ids.length, X.ids.length);
   check('RTL وتثبيت العناوين والفلاتر والحماية', X.rtl === true && X.freeze === 'D6' && /^A5:/.test(X.filter || '') && X.prot, [X.rtl, X.freeze, X.filter, X.prot]);
   check('تذييل: الكلية التقنية ببيشة – منصة حاضر Haader', /الكلية التقنية ببيشة – منصة حاضر Haader/.test(X.footer), X.footer);
   check('الخلايا المفتوحة للإدخال = القابلون للرصد × خلايا الإدخال (17 × 10)', X.unlocked === 170, X.unlocked);

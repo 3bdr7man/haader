@@ -10,6 +10,7 @@ const OUT = __dirname + '/out'; fs.mkdirSync(OUT, { recursive: true });
 (async () => {
   const b = await L.launch();
   const docs = L.seed();
+  { const rs = docs['gsec/63854'].rows, k = rs.findIndex((r) => !r.el); if (k > 0) rs.unshift(rs.splice(k, 1)[0]); }   // غير قابل للرصد أول الكشف في المصدر
   const p = await L.open(b, 't1', docs);
   ok(await p.evaluate(() => document.documentElement.dataset.look === 'v2' && !!document.getElementById('topbar')), 'المظهر المطوّر والشريط العلوي في نسخة Claude');
   await p.evaluate(() => { A.gCrn = '63854'; go('gentry'); }); await p.waitForTimeout(150);
@@ -27,10 +28,19 @@ warnings.filterwarnings('ignore')
 wb = openpyxl.load_workbook(sys.argv[1])
 meta = json.loads(wb['_haader']['A2'].value)
 ws = wb['63854']; hdr = [c.value for c in ws[5]]
-print(json.dumps({'sheets': wb.sheetnames, 'state': wb['_haader'].sheet_state, 'meta': meta, 'hdr': hdr, 'rtl': ws.sheet_view.rightToLeft, 'prot': ws.protection.sheet, 'charts': len(wb['الرئيسية']._charts)}, ensure_ascii=False))`, TPL]).toString());
+els = [ws.cell(r, 5).value for r in range(6, ws.max_row + 1) if ws.cell(r, 2).value]
+print(json.dumps({'els': els, 'sheets': wb.sheetnames, 'state': wb['_haader'].sheet_state, 'meta': meta, 'hdr': hdr, 'rtl': ws.sheet_view.rightToLeft, 'prot': ws.protection.sheet, 'charts': len(wb['الرئيسية']._charts)}, ensure_ascii=False))`, TPL]).toString());
   ok(['الرئيسية', 'التعليمات', '63854', '63857', '74306', 'توزيع الدرجات', 'الإعدادات', '_haader'].every((n) => info.sheets.includes(n)) && !info.sheets.includes('63905'), 'المصنف: شعب المدرب وحده، ورقة لكل شعبة باسم رقمها', info.sheets);
   ok(info.state === 'veryHidden' && info.meta.trainer === 'ut1' && info.meta.crns.join() === '63854,63857,74306', 'المعرّف الخفي: المدرب والشعب', info.meta);
   ok(info.rtl && info.prot, 'من اليمين إلى اليسار ومحمي');
+  const firstNo = info.els.indexOf('لا');
+  ok(firstNo > 0 && info.els.slice(firstNo).every((v) => v === 'لا') && info.els.includes('نعم'), 'نموذج Excel: غير القابلين للرصد في آخر ورقة الشعبة', info.els);
+  const grid = await p.evaluate(() => [...document.querySelectorAll('tr[data-s]')].map((tr) => tr.classList.contains('gnarow')));
+  const g0 = grid.indexOf(true);
+  ok(g0 > 0 && grid.slice(g0).every(Boolean), 'جدول إدخال الدرجات: غير القابلين للرصد في آخر القائمة', grid);
+  const aoa = await p.evaluate(() => gSecAoa(A.raw.gsec['63854'], false).filter((r) => /^\d{6,12}$/.test(String(r[2]))).map((r) => r[4]));
+  const a0 = aoa.indexOf('لا');
+  ok(a0 > 0 && aoa.slice(a0).every((v) => v === 'لا'), 'التصدير: غير القابلين للرصد في الآخر', aoa);
 
   // 2) تعبئة وإعادة الرفع
   const ids = await p.evaluate(() => G.eligible(A.raw.gsec['63854']).slice(0, 3).map((r) => r.id));

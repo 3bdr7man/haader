@@ -479,7 +479,7 @@ if (document.getElementById('shell')) (() => {
       head.push(p); lim.push(parts[p].reduce((a, c) => a + c.max, 0));
     });
     head.push('المجموع', 'حالة الإدخال', 'ساعات الحضور (رايات)', 'آخر حضور (رايات)'); lim.push(G.total(sec), '', '', '');
-    const rows = sec.rows.map((r, i) => {
+    const rows = gElFirst(sec.rows).map((r, i) => {
       const rs = s.rs[r.id], o = [i + 1, r.name, r.id, r.st || '', r.el ? 'نعم' : 'لا'], show = withGrades && r.el;
       Object.keys(parts).forEach((p) => { parts[p].forEach((c) => { (its[c.k] || []).forEach((it) => { const v = (((sub[r.id] || {})[c.k]) || {})[it.n]; o.push(show && G.isNum(v) ? v : null); }); o.push(show && G.isNum(rs.g[c.k]) ? rs.g[c.k] : null); }); o.push(show && rs.part[p] != null ? rs.part[p] : null); });
       o.push(show ? rs.total : null, G.ROW_ST[rs.st], r.hrs == null ? null : r.hrs, r.last || ''); return o;
